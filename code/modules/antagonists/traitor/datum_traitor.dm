@@ -329,7 +329,12 @@
 
 /datum/outfit/traitor/post_equip(mob/living/carbon/human/H, visualsOnly)
 	var/obj/item/melee/energy/sword/sword = locate() in H.held_items
-	sword.icon_state = "e_sword_on_red"
-	sword.worn_icon_state = "e_sword_on_red"
+	if(sword.flags_1 & INITIALIZED_1)
+		sword.attack_self()
+	else
+		sword.icon_state = "e_sword_on_red"
+		sword.inhand_icon_state = "e_sword_on_red"
+		sword.worn_icon_state = "e_sword_on_red"
 
-	H.update_held_items()
+		H.update_held_items()
+
