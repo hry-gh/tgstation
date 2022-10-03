@@ -29,16 +29,12 @@
 /obj/item/clothing/mask/bandana/adjustmask(mob/living/user)
 	. = ..()
 	if(mask_adjusted)
-		inhand_icon_state = "[initial(inhand_icon_state)]_up"
 		worn_icon_state += "_up"
 		undyeable = TRUE
 	else
 		inhand_icon_state = initial(inhand_icon_state)
 		worn_icon_state = initial(worn_icon_state)
 		undyeable = initial(undyeable)
-	if(ismob(loc))
-		var/mob/loc_mob = loc
-		loc_mob.update_held_items()
 
 /obj/item/clothing/mask/bandana/AltClick(mob/user)
 	. = ..()

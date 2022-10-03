@@ -6,13 +6,5 @@
 			"blend_mode": "overlay",
 			"color_ids": [ 1 ]
 		}
-	],
-	"greyscale_bandana_up": [
-        {
-            "type": "icon_state",
-            "icon_state": "greyscale_bandana_up",
-            "blend_mode": "overlay",
-            "color_ids": [ 1 ]
-        }
 	]
 }

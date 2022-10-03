@@ -12,19 +12,5 @@
             "blend_mode": "overlay",
             "color_ids": [ 2 ]
         }
-    ],
-	"greyscale_bandana_up": [
-        {
-            "type": "icon_state",
-            "icon_state": "greyscale_bandana_up",
-            "blend_mode": "overlay",
-            "color_ids": [ 1 ]
-        },
-		{
-            "type": "icon_state",
-            "icon_state": "bandana_skull_worn_up",
-            "blend_mode": "overlay",
-            "color_ids": [ 2 ]
-        }
-	]
+    ]
 }
