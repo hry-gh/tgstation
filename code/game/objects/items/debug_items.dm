@@ -123,7 +123,7 @@
 		RemoveElement(/datum/element/eyestab)
 
 /obj/item/debug/omnitool/item_spawner/attack_self(mob/user)
-	if(!user.client)
+	if(!user || !user.client)
 		return
 	var/path = text2path(tgui_input_text(user, "Insert an item typepath to spawn", "ADMINS ONLY. FUCK AROUND AND FIND OUT."))
 	if(!path)

@@ -280,7 +280,7 @@
 	to_chat(user, span_warning("RNBW_ENGAGE"))
 	if(force >= active_force)
 		icon_state = "[initial(icon_state)]_on_rainbow"
-		inhand_icon_state = "[initial(icon_state)]_on_rainbow"
+		inhand_icon_state = "[initial(inhand_icon_state)]_on_rainbow"
 		user.update_held_items()
 
 /obj/item/melee/energy/sword/pirate
