@@ -8,7 +8,7 @@
         },
 		{
             "type": "icon_state",
-            "icon_state": "bandana_skull_worn",
+            "icon_state": "greyscale_bandana_skull",
             "blend_mode": "overlay",
             "color_ids": [ 2 ]
         }

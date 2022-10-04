@@ -122,7 +122,6 @@
 	name = "striped bandana"
 	desc = "A fine bandana with nanotech lining and a stripe across."
 	icon_state = "bandstriped"
-	inhand_icon_state = "bandana_striped_greyscale"
 	worn_icon_state = "bandstriped_worn"
 	greyscale_config = /datum/greyscale_config/bandstriped
 	greyscale_config_worn = /datum/greyscale_config/bandstriped_worn
