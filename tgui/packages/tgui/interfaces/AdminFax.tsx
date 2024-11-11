@@ -15,7 +15,12 @@ import {
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
 
-export const AdminFax = (props) => {
+type AdminFaxData = {
+  stamps: string[];
+  faxes: string[];
+};
+
+export const AdminFax = () => {
   return (
     <Window title="Admin Fax Panel" width={400} height={675} theme="admin">
       <Window.Content>
@@ -25,8 +30,8 @@ export const AdminFax = (props) => {
   );
 };
 
-export const FaxMainPanel = (props) => {
-  const { act, data } = useBackend();
+export const FaxMainPanel = () => {
+  const { act, data } = useBackend<AdminFaxData>();
 
   const [fax, setFax] = useState('');
   const [saved, setSaved] = useState(false);
@@ -113,11 +118,10 @@ export const FaxMainPanel = (props) => {
         </Box>
         <Divider />
         <Box fontSize="14px" mt="5px">
-          <Tooltip content="What was writen in fax log?">
+          <Tooltip content="What was written in the fax log?">
             <Input
               mb="5px"
               placeholder="From who..."
-              tooltip="Name what be user in fax history"
               value={fromWho}
               width="100%"
               onChange={(_, v) => setFromWho(v)}
@@ -169,6 +173,7 @@ export const FaxMainPanel = (props) => {
                   width="45px"
                   minValue={0}
                   maxValue={300}
+                  step={1}
                   value={stampCoordX}
                   onChange={(v) => setStampCoordX(v)}
                 />
@@ -179,6 +184,8 @@ export const FaxMainPanel = (props) => {
                 <NumberInput
                   width="45px"
                   minValue={0}
+                  maxValue={300}
+                  step={1}
                   value={stampCoordY}
                   onChange={(v) => setStampCoordY(v)}
                 />
