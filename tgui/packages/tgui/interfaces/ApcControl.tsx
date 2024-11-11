@@ -11,13 +11,40 @@ import {
   Table,
   Tabs,
 } from 'tgui-core/components';
+import { BooleanLike } from 'tgui-core/react';
 
-import { useBackend, useLocalState } from '../backend';
+import { useBackend } from '../backend';
 import { Window } from '../layouts';
 import { AreaCharge, powerRank } from './PowerMonitor';
 
-export const ApcControl = (props) => {
-  const { data } = useBackend();
+type ApcControlData = {
+  auth_id: string;
+  authenticated: BooleanLike;
+  emagged: BooleanLike;
+  logging: BooleanLike;
+  restoring: BooleanLike;
+
+  logs: { entry: string }[];
+
+  apcs: ApcData[];
+};
+
+type ApcData = {
+  name: string;
+  operating: BooleanLike;
+  charge: number | 'NOCELL';
+  load: string;
+  charging: 0 | 1 | 2;
+  chargeMode: BooleanLike;
+  eqp: 0 | 1 | 2 | 3;
+  lgt: 0 | 1 | 2 | 3;
+  env: 0 | 1 | 2 | 3;
+  responds: BooleanLike;
+  ref: string;
+};
+
+export const ApcControl = () => {
+  const { data } = useBackend<ApcControlData>();
   return (
     <Window title="APC Controller" width={550} height={500}>
       <Window.Content>
@@ -28,8 +55,8 @@ export const ApcControl = (props) => {
   );
 };
 
-const ApcLoggedOut = (props) => {
-  const { act, data } = useBackend();
+const ApcLoggedOut = () => {
+  const { act, data } = useBackend<ApcControlData>();
   const { emagged } = data;
   const text = emagged === 1 ? 'Open' : 'Log In';
   return (
@@ -45,10 +72,13 @@ const ApcLoggedOut = (props) => {
   );
 };
 
-const ApcLoggedIn = (props) => {
-  const { act, data } = useBackend();
+const ApcLoggedIn = () => {
+  const { act, data } = useBackend<ApcControlData>();
   const { restoring } = data;
   const [tabIndex, setTabIndex] = useState(1);
+
+  const [sortByField, setSortByField] = useState<string | boolean>('name');
+
   return (
     <Box>
       <Tabs>
@@ -81,12 +111,15 @@ const ApcLoggedIn = (props) => {
         <Stack vertical>
           <Stack.Item>
             <Section>
-              <ControlPanel />
+              <ControlPanel
+                sortByField={sortByField}
+                setSortByField={setSortByField}
+              />
             </Section>
           </Stack.Item>
           <Stack.Item>
             <Section scrollable>
-              <ApcControlScene />
+              <ApcControlScene sortByField={sortByField} />
             </Section>
           </Stack.Item>
         </Stack>
@@ -102,10 +135,15 @@ const ApcLoggedIn = (props) => {
   );
 };
 
-const ControlPanel = (props) => {
-  const { act, data } = useBackend();
+const ControlPanel = (props: {
+  sortByField: string | boolean;
+  setSortByField: (_: string | boolean) => void;
+}) => {
+  const { act, data } = useBackend<ApcControlData>();
+
+  const { sortByField, setSortByField } = props;
+
   const { emagged, logging } = data;
-  const [sortByField, setSortByField] = useLocalState('sortByField', 'name');
   return (
     <Stack justify="space-between">
       <Stack.Item>
@@ -154,27 +192,29 @@ const ControlPanel = (props) => {
   );
 };
 
-const ApcControlScene = (props) => {
-  const { data, act } = useBackend();
+const ApcControlScene = (props: { sortByField: string | boolean }) => {
+  const { data, act } = useBackend<ApcControlData>();
 
-  const [sortByField] = useLocalState('sortByField', 'name');
+  const { sortByField } = props;
 
   const apcs = flow([
     (apcs) =>
-      map(apcs, (apc, i) => ({
+      map(apcs, (apc: ApcData, i) => ({
         ...apc,
         // Generate a unique id
         id: apc.name + i,
       })),
-    sortByField === 'name' && ((apcs) => sortBy(apcs, (apc) => apc.name)),
-    sortByField === 'charge' && ((apcs) => sortBy(apcs, (apc) => -apc.charge)),
-    sortByField === 'draw' &&
-      ((apcs) =>
-        sortBy(
-          apcs,
-          (apc) => -powerRank(apc.load),
-          (apc) => -parseFloat(apc.load),
-        )),
+    (apcs) =>
+      sortByField === 'name' && sortBy(apcs, (apc: ApcData) => apc.name),
+    (apcs) =>
+      sortByField === 'charge' && sortBy(apcs, (apc: ApcData) => -apc.charge),
+    (apcs) =>
+      sortByField === 'draw' &&
+      sortBy(
+        apcs,
+        (apc: ApcData) => -powerRank(apc.load),
+        (apc: ApcData) => -parseFloat(apc.load),
+      ),
   ])(data.apcs);
   return (
     <Box height={30}>
@@ -255,8 +295,8 @@ const ApcControlScene = (props) => {
   );
 };
 
-const LogPanel = (props) => {
-  const { data } = useBackend();
+const LogPanel = () => {
+  const { data } = useBackend<ApcControlData>();
 
   const logs = map(data.logs, (line, i) => ({
     ...line,
