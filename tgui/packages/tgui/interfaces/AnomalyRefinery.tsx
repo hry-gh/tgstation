@@ -7,12 +7,23 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
+import { BooleanLike } from 'tgui-core/react';
 
 import { useBackend, useSharedState } from '../backend';
 import { Window } from '../layouts';
-import { GasmixParser } from './common/GasmixParser';
+import { Gasmix, GasmixParser } from './common/GasmixParser';
 
-export const AnomalyRefinery = (props) => {
+type AnomalyRefineryData = {
+  gasList: Gasmix[];
+  valvePresent: BooleanLike;
+  valveReady: BooleanLike;
+  reactionIncrement: number;
+  core?: string;
+  requiredRadius?: number;
+  active: BooleanLike;
+};
+
+export const AnomalyRefinery = () => {
   return (
     <Window title="Anomaly Refinery" width={550} height={350}>
       <Window.Content>
@@ -22,8 +33,8 @@ export const AnomalyRefinery = (props) => {
   );
 };
 
-const AnomalyRefineryContent = (props) => {
-  const { act, data } = useBackend();
+const AnomalyRefineryContent = () => {
+  const { act, data } = useBackend<AnomalyRefineryData>();
   const [currentTab, changeTab] = useSharedState('exploderTab', 1);
   const { core, valvePresent, active } = data;
 
@@ -71,8 +82,8 @@ const AnomalyRefineryContent = (props) => {
   );
 };
 
-const CoreCompressorContent = (props) => {
-  const { act, data } = useBackend();
+const CoreCompressorContent = () => {
+  const { act, data } = useBackend<AnomalyRefineryData>();
   const { core, requiredRadius, gasList, valveReady, active, valvePresent } =
     data;
   return (
@@ -176,8 +187,8 @@ const CoreCompressorContent = (props) => {
     </>
   );
 };
-const BombProcessorContent = (props) => {
-  const { act, data } = useBackend();
+const BombProcessorContent = () => {
+  const { act, data } = useBackend<AnomalyRefineryData>();
   const { gasList, reactionIncrement } = data;
   return (
     <>
@@ -212,7 +223,7 @@ const BombProcessorContent = (props) => {
       <Stack.Item grow>
         <Stack fill>
           {[gasList[0], gasList[1]].map((individualGasmix) => (
-            <Stack.Item grow key={individualGasmix.ref}>
+            <Stack.Item grow key={individualGasmix.reference}>
               <Section
                 fill
                 scrollable
