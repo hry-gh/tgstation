@@ -3,8 +3,12 @@ import { Icon, Section, Stack } from 'tgui-core/components';
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
 
-export const AntagInfoShade = (props) => {
-  const { act, data } = useBackend();
+type AntagInfoShadeData = {
+  master_name: string;
+};
+
+export const AntagInfoShade = () => {
+  const { act, data } = useBackend<AntagInfoShadeData>();
   const { master_name } = data;
   return (
     <Window width={400} height={400} theme="abductor">
