@@ -1,9 +1,11 @@
 import { Button, LabeledList, Section } from 'tgui-core/components';
+import { BooleanLike } from 'tgui-core/react';
 
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
 
-const dangerMap = {
+type DangerType = 2 | 1 | 0;
+const dangerMap: { [key in DangerType] } = {
   2: {
     color: 'good',
     localStatusText: 'Offline',
@@ -18,8 +20,41 @@ const dangerMap = {
   },
 };
 
-export const AiAirlock = (props) => {
-  const { act, data } = useBackend();
+type AiAirlockData = {
+  power: {
+    main: DangerType;
+    main_timeleft: number;
+    backup: DangerType;
+    backup_timeleft: number;
+  };
+
+  shock: DangerType;
+  shock_timeleft: number;
+  id_scanner: BooleanLike;
+  emergency: BooleanLike;
+  locked: BooleanLike;
+  lights: BooleanLike;
+  safe: BooleanLike;
+  speed: BooleanLike;
+  welded: BooleanLike;
+  opened: BooleanLike;
+
+  wires: {
+    main_1: BooleanLike;
+    main_2: BooleanLike;
+    backup_1: BooleanLike;
+    backup_2: BooleanLike;
+    shock: BooleanLike;
+    id_scanner: BooleanLike;
+    bolts: BooleanLike;
+    lights: BooleanLike;
+    safe: BooleanLike;
+    timing: BooleanLike;
+  };
+};
+
+export const AiAirlock = () => {
+  const { act, data } = useBackend<AiAirlockData>();
   const statusMain = dangerMap[data.power.main] || dangerMap[0];
   const statusBackup = dangerMap[data.power.backup] || dangerMap[0];
   const statusElectrify = dangerMap[data.shock] || dangerMap[0];
