@@ -6,10 +6,37 @@ import {
   ProgressBar,
   Section,
 } from 'tgui-core/components';
+import { BooleanLike } from 'tgui-core/react';
 
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
 import { InterfaceLockNoticeBox } from './common/InterfaceLockNoticeBox';
+
+type ApcData = {
+  locked: BooleanLike;
+  failTime: number;
+  isOperating: BooleanLike;
+  externalPower: 0 | 1 | 2;
+  powerCellStatus?: number;
+  chargeMode: BooleanLike;
+  chargingStatus: 0 | 1 | 2;
+  chargingPowerDisplay: string;
+  totalLoad: string;
+  coverLocked: BooleanLike;
+  remoteAccess: BooleanLike;
+  siliconUser: BooleanLike;
+  malfStatus: 0 | 1 | 2 | 3 | 4;
+  emergencyLights: BooleanLike;
+  nightshiftLights: BooleanLike;
+  disable_nightshift_toggle: BooleanLike;
+
+  powerChannels: {
+    title: string;
+    powerLoad: string;
+    status: 0 | 1 | 2 | 3;
+    topicParams: { [key: string]: { [key: string]: number } };
+  }[];
+};
 
 export const Apc = (props) => {
   return (
@@ -63,7 +90,7 @@ const malfMap = {
 };
 
 const ApcContent = (props) => {
-  const { act, data } = useBackend();
+  const { act, data } = useBackend<ApcData>();
   const locked = data.locked && !data.siliconUser;
   const externalPowerStatus =
     powerStatusMap[data.externalPower] || powerStatusMap[0];
@@ -71,7 +98,10 @@ const ApcContent = (props) => {
     powerStatusMap[data.chargingStatus] || powerStatusMap[0];
   const channelArray = data.powerChannels || [];
   const malfStatus = malfMap[data.malfStatus] || malfMap[0];
-  const adjustedCellChange = data.powerCellStatus / 100;
+  const adjustedCellChange = data.powerCellStatus
+    ? data.powerCellStatus / 100
+    : 0;
+
   if (data.failTime > 0) {
     return (
       <NoticeBox info textAlign="center" mb={0}>
