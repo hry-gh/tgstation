@@ -1,10 +1,18 @@
+import { BooleanLike } from 'common/react';
 import { BlockQuote, Section, Stack } from 'tgui-core/components';
 
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
 
+type AntagInfoSentientData = {
+  enslaved_to?: string;
+  p_them?: string;
+  p_their?: string;
+  holographic: BooleanLike;
+};
+
 export const AntagInfoSentient = (props) => {
-  const { act, data } = useBackend();
+  const { act, data } = useBackend<AntagInfoSentientData>();
   const { enslaved_to, holographic, p_them, p_their } = data;
   return (
     <Window width={400} height={400} theme="neutral">
