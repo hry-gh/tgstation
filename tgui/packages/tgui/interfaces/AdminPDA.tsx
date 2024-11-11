@@ -1,10 +1,22 @@
+import { useState } from 'react';
 import { Box, Dropdown, Input, Section, TextArea } from 'tgui-core/components';
+import { BooleanLike } from 'tgui-core/react';
 
-import { useBackend, useLocalState } from '../backend';
+import { useBackend } from '../backend';
 import { Button } from '../components/Button';
 import { Window } from '../layouts';
 
-export const AdminPDA = (props) => {
+type AdminPDAData = {
+  users: { [ref: string]: PDAUser };
+};
+
+type PDAUser = {
+  ref: string;
+  username: string;
+  invisible: BooleanLike;
+};
+
+export const AdminPDA = () => {
   return (
     <Window title="Send PDA Message" width={300} height={575} theme="admin">
       <Window.Content>
@@ -16,17 +28,14 @@ export const AdminPDA = (props) => {
   );
 };
 
-const ReceiverChoice = (props) => {
-  const { data } = useBackend();
+const ReceiverChoice = () => {
+  const { data } = useBackend<AdminPDAData>();
   const { users } = data;
   const receivers = Array.from(Object.values(users));
 
-  const [user, setUser] = useLocalState('user', '');
-  const [spam, setSpam] = useLocalState('spam', false);
-  const [showInvisible, setShowInvisible] = useLocalState(
-    'showInvisible',
-    false,
-  );
+  const [user, setUser] = useState('');
+  const [spam, setSpam] = useState(false);
+  const [showInvisible, setShowInvisible] = useState(false);
 
   return (
     <Section title="To Who?" textAlign="center">
@@ -54,22 +63,20 @@ const ReceiverChoice = (props) => {
           checked={showInvisible}
           fluid
           onClick={() => setShowInvisible(!showInvisible)}
-          content="Include invisible?"
-        />
-        <Button.Checkbox
-          checked={spam}
-          fluid
-          onClick={() => setSpam(!spam)}
-          content="Should it be sent to everyone?"
-        />
+        >
+          Include invisible?
+        </Button.Checkbox>
+        <Button.Checkbox checked={spam} fluid onClick={() => setSpam(!spam)}>
+          Should it be sent to everyone?
+        </Button.Checkbox>
       </Box>
     </Section>
   );
 };
 
-const SenderInfo = (props) => {
-  const [name, setName] = useLocalState('name', '');
-  const [job, setJob] = useLocalState('job', '');
+const SenderInfo = () => {
+  const [name, setName] = useState('');
+  const [job, setJob] = useState('');
 
   return (
     <Section title="From Who?" textAlign="center">
@@ -95,22 +102,24 @@ const SenderInfo = (props) => {
   );
 };
 
-const MessageInput = (props) => {
+const MessageInput = () => {
   const { act } = useBackend();
 
-  const [user, setUser] = useLocalState('user', '');
-  const [name, setName] = useLocalState('name', '');
-  const [job, setJob] = useLocalState('job', '');
-  const [messageText, setMessageText] = useLocalState('message', '');
-  const [spam, setSpam] = useLocalState('spam', false);
-  const [force, setForce] = useLocalState('force', false);
-  const [showInvisible, setShowInvisible] = useLocalState(
-    'showInvisible',
-    false,
-  );
+  const [user, setUser] = useState('');
+  const [name, setName] = useState('');
+  const [job, setJob] = useState('');
+  const [messageText, setMessageText] = useState('');
+  const [spam, setSpam] = useState(false);
+  const [force, setForce] = useState(false);
+  const [showInvisible, setShowInvisible] = useState(false);
 
-  const tooltipText = function (name, job, message, target) {
-    let reasonList = [];
+  const tooltipText = (
+    name: string,
+    job: string,
+    message: string,
+    target: boolean,
+  ): string => {
+    let reasonList: string[] = [];
     if (!target) reasonList.push('target');
     if (!name) reasonList.push('name');
     if (!job) reasonList.push('job');
@@ -136,12 +145,13 @@ const MessageInput = (props) => {
         <Button.Checkbox
           fluid
           checked={force}
-          content="Force send the message?"
           tooltip={
             'This will immediately broadcast the message, bypassing telecomms altogether.'
           }
           onClick={() => setForce(!force)}
-        />
+        >
+          Force send the message?
+        </Button.Checkbox>
         <Button
           tooltip={
             blocked
