@@ -13,6 +13,11 @@
 
 import { perf } from 'common/perf';
 import { createAction } from 'common/redux';
+import {
+  releaseHeldKeys,
+  startKeyPassthrough,
+  stopKeyPassthrough,
+} from 'tgui-core/hotkeys';
 import { BooleanLike } from 'tgui-core/react';
 
 import { setupDrag } from './drag';
@@ -207,6 +212,8 @@ export const backendMiddleware = (store) => {
 
     if (type === 'backend/suspendSuccess') {
       suspendRenderer();
+      stopKeyPassthrough();
+      releaseHeldKeys();
       clearInterval(suspendInterval);
       suspendInterval = undefined;
       Byond.winset(Byond.windowId, {
@@ -238,6 +245,7 @@ export const backendMiddleware = (store) => {
       logger.log('backend/update', payload);
       // Signal renderer that we have resumed
       resumeRenderer();
+      startKeyPassthrough();
       // Setup drag
       setupDrag();
       // We schedule this for the next tick here because resizing and unhiding
