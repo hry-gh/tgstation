@@ -6,6 +6,11 @@
 @use 'sass:map';
 @use 'sass:color';
 
+:root {
+  --color-base: hsla(225, 10%, 10%, 0.45) !important;
+  --section-background: hsla(225, 10%, 10%, 0.45) !important;
+}
+
 em {
   font-style: normal;
   font-weight: bold;
