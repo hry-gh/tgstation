@@ -278,3 +278,33 @@
 			"assets" = webroot_asset_urls,
 		)
 	window.send_message("metadata", metadata)
+
+/datum/tgui_panel/proc/create_browser(new_layout = TRUE, force = FALSE)
+	if(force)
+		winset(client, "browseroutput", list("parent" = ""))
+
+	if(new_layout)
+		winset(client, "browseroutput", list(
+			"parent" = "mapwindow",
+			"type" = "BROWSER",
+			"background-color" = "none",
+			"inner-background-color" = "transparent",
+		))
+
+		winset(client, "split", list("right" = ""))
+	else
+		winset(client, "browseroutput", list(
+			"parent" = "output_browser",
+			"type" = "BROWSER",
+			"pos" = "0,0",
+			"size" = "640x456",
+			"anchor1" = "0,0",
+			"anchor2" = "100,100",
+		))
+
+		winset(client, "split", list("right" = "info_and_buttons"))
+
+	client.view_size?.setDefault(VIEWPORT_USE_PREF)
+
+	if(force)
+		initialize(force = TRUE)

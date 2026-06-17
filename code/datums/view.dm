@@ -61,7 +61,11 @@
 
 /datum/view_data/proc/getScreenSize()
 	if(chief.prefs.read_preference(/datum/preference/toggle/widescreen))
-		return WIDESCREEN_VIEWPORT_SIZE
+		if(chief.prefs.read_preference(/datum/preference/toggle/tgpanel_layout))
+			return WIDESCREEN_VIEWPORT_SIZE
+
+		return WIDESCREEN_DOCKED_VIEWPORT_SIZE
+
 	return SQUARE_VIEWPORT_SIZE
 
 /datum/view_data/proc/resetToDefault()

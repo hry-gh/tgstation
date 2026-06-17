@@ -6,9 +6,15 @@
 @use 'sass:map';
 @use 'sass:color';
 
-:root {
+body.onmap {
   --color-base: hsla(225, 10%, 10%, 0.45) !important;
   --section-background: hsla(225, 10%, 10%, 0.45) !important;
+  --color-base-start: hsl(
+      from var(--color-base) h s calc(l + var(--base-gradient-spread))
+    )
+    --color-base-end: hsl(
+      from var(--color-base) h s calc(l - var(--base-gradient-spread))
+    );
 }
 
 em {

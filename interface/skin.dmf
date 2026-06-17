@@ -89,15 +89,6 @@ window "mapwindow"
 		saved-params = ""
 		text = ""
 		align = left
-	elem "browseroutput"
-		type = BROWSER
-		pos = 310,10
-		size = 320x200
-		anchor1 = 100,0
-		anchor2 = 75,25
-		background-color = none
-		saved-params = ""
-		inner-background-color = transparent
 
 window "info_and_buttons"
 	elem "info_and_buttons"
@@ -198,14 +189,16 @@ window "infowindow"
 	elem "info_split"
 		type = CHILD
 		pos = 0,5
-		size = 200x200
 		anchor1 = 0,0
 		anchor2 = 100,100
+		size = 640x475
+		is-vert = false
+		splitter = 97.5
 		background-color = #ffc41f
+		show-splitter = false
 		saved-params = "splitter"
 		left = "info"
 		right = "input_buttons"
-		is-vert = false
 
 window "info"
 	elem "info_main"
@@ -291,6 +284,16 @@ window "output_selector"
 		is-vert = false
 		splitter = 80
 		show-splitter = false
+
+window "output_browser"
+	elem "output_browser"
+		type = MAIN
+		pos = 0,0
+		size = 640x456
+		anchor1 = -1,-1
+		anchor2 = -1,-1
+		saved-params = "pos;size;is-minimized;is-maximized"
+		is-pane = true
 
 window "inputwindow"
 	elem "inputwindow"
@@ -484,4 +487,3 @@ window "tgui_say"
 		anchor1 = 0,0
 		anchor2 = 0,0
 		saved-params = ""
-

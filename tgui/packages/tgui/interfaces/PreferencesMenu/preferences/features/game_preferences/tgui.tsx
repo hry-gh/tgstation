@@ -41,3 +41,10 @@ export const tgui_say_light_mode: FeatureToggle = {
   description: 'Sets TGUI Say to use a light mode.',
   component: CheckboxInput,
 };
+
+export const tgpanel_layout: FeatureToggle = {
+  name: 'New Chat Layout',
+  category: 'UI',
+  description: 'Use the new chat layout, or the legacy experience.',
+  component: CheckboxInput,
+};
