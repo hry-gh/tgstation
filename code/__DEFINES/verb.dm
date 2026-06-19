@@ -1,12 +1,16 @@
 /**
  * Defines a game verb with an associated /datum/verb_metadata.
  *
+ * The verb stub has no native BYOND args — argument collection is handled
+ * by SSverbs using VERB_ARG metadata declared in the body proc.
+ *
  * Usage:
- *   GAME_VERB(/client, ooc, "OOC", "Send a message in OOC.", "OOC", msg as text)
- *       // verb body
+ *   GAME_VERB(/client, ooc, "OOC", "Send a message in OOC.", "OOC")
+ *       VERB_ARG(msg, VERB_ARG_TYPE_TEXT, VERB_ARG_SOURCE_INPUT)
+ *       // verb body using msg
  */
 
-#define _GAME_VERB(owner_type, verb_path_name, verb_name, verb_desc, verb_category, show_in_context_menu, is_hidden, verb_args...) \
+#define _GAME_VERB(owner_type, verb_path_name, verb_name, verb_desc, verb_category, show_in_context_menu, is_hidden) \
 /datum/verb_metadata##owner_type/##verb_path_name \
 { \
 	name = ##verb_name; \
@@ -15,25 +19,46 @@
 	verb_path = ##owner_type/verb/##verb_path_name; \
 	body_path = ##owner_type/proc/__gvb_##verb_path_name; \
 }; \
-##owner_type/verb/##verb_path_name(##verb_args) \
+##owner_type/verb/##verb_path_name() \
 { \
 	set name = ##verb_name; \
 	set desc = ##verb_desc; \
 	set hidden = ##is_hidden; \
 	set popup_menu = ##show_in_context_menu; \
 	set category = ##verb_category; \
-	__gvb_##verb_path_name(arglist(args)); \
+	SSverbs.invoke_verb(src, ##owner_type/verb/##verb_path_name, args); \
 }; \
-##owner_type/proc/__gvb_##verb_path_name(##verb_args)
+##owner_type/proc/__gvb_##verb_path_name(list/structured_args)
 
-#define GAME_VERB(owner_type, verb_path_name, verb_name, verb_desc, verb_category, verb_args...) \
-_GAME_VERB(owner_type, verb_path_name, verb_name, verb_desc, verb_category, FALSE, FALSE, ##verb_args)
+#define GAME_VERB(owner_type, verb_path_name, verb_name, verb_desc, verb_category) \
+_GAME_VERB(owner_type, verb_path_name, verb_name, verb_desc, verb_category, FALSE, FALSE)
 
-#define GAME_VERB_CONTEXT(owner_type, verb_path_name, verb_name, verb_desc, verb_category, verb_args...) \
-_GAME_VERB(owner_type, verb_path_name, verb_name, verb_desc, verb_category, TRUE, FALSE, ##verb_args)
+#define _GAME_VERB_CONTEXT(owner_type, verb_path_name, verb_name, verb_desc, verb_category, context_type) \
+/datum/verb_metadata##owner_type/##verb_path_name \
+{ \
+	name = ##verb_name; \
+	description = ##verb_desc; \
+	category = ##verb_category; \
+	verb_path = ##owner_type/verb/##verb_path_name; \
+	body_path = ##owner_type/proc/__gvb_##verb_path_name; \
+}; \
+##owner_type/verb/##verb_path_name(var##context_type/__context_target in world) \
+{ \
+	set name = ##verb_name; \
+	set desc = ##verb_desc; \
+	set hidden = FALSE; \
+	set popup_menu = TRUE; \
+	set category = ##verb_category; \
+	if(__context_target) { var/list/__args = args.Copy(); __args += list("__context_target__" = __context_target); SSverbs.invoke_verb(src, ##owner_type/verb/##verb_path_name, __args); } \
+	else { SSverbs.invoke_verb(src, ##owner_type/verb/##verb_path_name, args); }; \
+}; \
+##owner_type/proc/__gvb_##verb_path_name(list/structured_args)
 
-#define GAME_VERB_HIDDEN(owner_type, verb_path_name, verb_name, verb_args...) \
-_GAME_VERB(owner_type, verb_path_name, verb_name, "", null, FALSE, TRUE, ##verb_args)
+#define GAME_VERB_CONTEXT(owner_type, verb_path_name, verb_name, verb_desc, verb_category, context_type) \
+_GAME_VERB_CONTEXT(owner_type, verb_path_name, verb_name, verb_desc, verb_category, context_type)
+
+#define GAME_VERB_HIDDEN(owner_type, verb_path_name, verb_name) \
+_GAME_VERB(owner_type, verb_path_name, verb_name, "", null, FALSE, TRUE)
 
 #define _GAME_VERB_PROC(owner_type, verb_path_name, verb_name, verb_desc, verb_category, show_in_context_menu, is_hidden, verb_args...) \
 /datum/verb_metadata##owner_type/##verb_path_name \
