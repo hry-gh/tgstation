@@ -299,7 +299,7 @@ GLOBAL_LIST_INIT(unrecommended_builds, list(
 
 	// Instantiate tgui panel
 	tgui_panel = new(src, "browseroutput")
-	tgui_panel.create_browser(prefs.read_preference(/datum/preference/toggle/tgpanel_layout))
+	tgui_panel.create_browser(prefs.read_preference(/datum/preference/choiced/tgpanel_layout))
 
 	if(fexists(roundend_report_file()))
 		ASSIGN_GAME_VERB(src, /client/show_previous_roundend_report)
@@ -1118,7 +1118,7 @@ GLOBAL_LIST_INIT(unrecommended_builds, list(
 	for(var/procpath/verb_to_init as anything in verbstoprocess)
 		if(!verb_to_init || verb_to_init.hidden)
 			continue
-		if(!SSverbs.verbs_by_verb_path[verb_to_init] && !SSadmin_verbs.admin_verbs_by_verb_path[verb_to_init])
+		if(!SSverbs.verbs_by_verb_path[verb_to_init] && !SSadmin_verbs.admin_verbs_by_verb_path[verb_to_init] && !istext(verb_to_init.category))
 			continue
 		panel_verbs += list(SSverbs.serialize_verb(verb_to_init))
 	tgui_panel?.window?.send_message("verbs/init", list("verbs" = panel_verbs))

@@ -7,11 +7,14 @@
  * tgui_panel datum
  * Hosts tgchat and other nice features.
  */
+#define TGPANEL_POPUP_WINDOW "tgui_panel_popup"
+
 /datum/tgui_panel
 	var/client/client
 	var/datum/tgui_window/window
 	var/broken = FALSE
 	var/initialized_at
+	var/current_layout
 	/// Each client notifies on protected playback, so this prevents spamming admins.
 	var/static/admins_warned = FALSE
 
@@ -107,6 +110,21 @@
 		client.init_verbs()
 		return TRUE
 
+	if(type == "panel/toggle_layout")
+		winset(client, "map", "focus=true")
+		var/current = client.prefs.read_preference(/datum/preference/choiced/tgpanel_layout)
+		var/next
+		switch(current)
+			if(TGPANEL_ONMAP)
+				next = TGPANEL_PANEL
+			if(TGPANEL_PANEL)
+				next = TGPANEL_ONMAP
+			else
+				next = TGPANEL_ONMAP
+		log_tgui(client, "panel/toggle_layout: [current] -> [next]", context = "tgui_panel")
+		client.prefs.update_preference(GLOB.preference_entries[/datum/preference/choiced/tgpanel_layout], next)
+		return TRUE
+
 	if(type == "verbs/request_typepaths")
 		var/parent_text = payload["parent"]
 		var/browse_type = text2path(parent_text)
@@ -167,14 +185,15 @@
 			var/list/resolved_args = resolve_invoke_args(payload["args"], admin_meta.metadata?.arguments)
 			SSadmin_verbs.dynamic_invoke_verb(client, admin_meta.type, resolved_args)
 			return TRUE
-		var/datum/verb_metadata/meta = SSverbs.verbs_by_verb_path[verb_path]
-		if(!meta)
-			return TRUE
 		var/target = resolve_verb_target(verb_path)
 		if(!target)
 			return TRUE
-		var/list/resolved_args = resolve_invoke_args(payload["args"], meta.arguments)
-		call(target, meta.body_path)(resolved_args)
+		var/datum/verb_metadata/meta = SSverbs.verbs_by_verb_path[verb_path]
+		if(meta)
+			var/list/resolved_args = resolve_invoke_args(payload["args"], meta.arguments)
+			call(target, meta.body_path)(resolved_args)
+		else
+			call(target, verb_path)()
 		return TRUE
 
 	if(type == "requestMetadata")
@@ -279,30 +298,52 @@
 		)
 	window.send_message("metadata", metadata)
 
-/datum/tgui_panel/proc/create_browser(new_layout = TRUE, force = FALSE)
+/datum/tgui_panel/proc/create_browser(layout = TGPANEL_ONMAP, force = FALSE)
 	if(force)
 		winset(client, "browseroutput", list("parent" = ""))
 
-	if(new_layout)
-		winset(client, "browseroutput", list(
-			"parent" = "mapwindow",
-			"type" = "BROWSER",
-			"background-color" = "none",
-			"inner-background-color" = "transparent",
-		))
+	log_tgui(client, "create_browser: [current_layout] -> [layout], force=[force]", context = "tgui_panel")
 
-		winset(client, "split", list("right" = ""))
-	else
-		winset(client, "browseroutput", list(
-			"parent" = "output_browser",
-			"type" = "BROWSER",
-			"pos" = "0,0",
-			"size" = "640x456",
-			"anchor1" = "0,0",
-			"anchor2" = "100,100",
-		))
+	// Close the popup window if we're leaving window mode
+	if(current_layout == TGPANEL_WINDOW && layout != TGPANEL_WINDOW)
+		client << browse(null, "window=[TGPANEL_POPUP_WINDOW]")
 
-		winset(client, "split", list("right" = "info_and_buttons"))
+	current_layout = layout
+
+	switch(layout)
+		if(TGPANEL_ONMAP)
+			winset(client, "browseroutput", list(
+				"parent" = "mapwindow",
+				"type" = "BROWSER",
+				"background-color" = "none",
+				"inner-background-color" = "transparent",
+			))
+			winset(client, "split", list("right" = ""))
+
+		if(TGPANEL_PANEL)
+			winset(client, "browseroutput", list(
+				"parent" = "output_browser",
+				"type" = "BROWSER",
+				"pos" = "0,0",
+				"size" = "640x456",
+				"anchor1" = "0,0",
+				"anchor2" = "100,100",
+			))
+			winset(client, "split", list("right" = "info_and_buttons"))
+
+		if(TGPANEL_WINDOW)
+			// Create a real popup window, then reparent the browser into it
+			client << browse("<html><head><title>Chat</title></head><body style='margin:0;background:#202020'></body></html>", "window=[TGPANEL_POPUP_WINDOW];size=640x456;can_close=0;can_resize=0;titlebar=0")
+			winset(client, TGPANEL_POPUP_WINDOW, list("background-color" = "#202020"))
+			winset(client, "browseroutput", list(
+				"parent" = TGPANEL_POPUP_WINDOW,
+				"type" = "BROWSER",
+				"pos" = "0,0",
+				"size" = "640x456",
+				"anchor1" = "0,0",
+				"anchor2" = "100,100",
+			))
+			winset(client, "split", list("right" = ""))
 
 	client.view_size?.setDefault(VIEWPORT_USE_PREF)
 
