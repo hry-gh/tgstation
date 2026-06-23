@@ -26,6 +26,17 @@ function scheduleWinset() {
   }
 }
 
+function sendBounds() {
+  Byond.winget(winsetTarget, ['pos', 'size']).then((props) => {
+    Byond.sendMessage('panel/bounds', {
+      x: props.pos.x,
+      y: props.pos.y,
+      w: props.size.x,
+      h: props.size.y,
+    });
+  });
+}
+
 function updateAnchors() {
   if (winsetTarget !== 'browseroutput') return;
   Promise.all([
@@ -80,6 +91,7 @@ function startDrag(
         document.removeEventListener('mouseup', handleUp);
         updateAnchors();
         saveChatRatio();
+        sendBounds();
       };
 
       document.addEventListener('mousemove', handleMove);

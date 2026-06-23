@@ -196,6 +196,25 @@
 			call(target, verb_path)()
 		return TRUE
 
+	if(type == "panel/bounds")
+		var/x = payload["x"]
+		var/y = payload["y"]
+		var/w = payload["w"]
+		var/h = payload["h"]
+		var/datum/hud/hud = client.mob?.hud_used
+		if(!hud)
+			return TRUE
+		// Winget the map view-size and cache it BEFORE calling displacement (which must not yield)
+		var/map_view_size_raw = winget(client, "mapwindow.map", "view-size")
+		var/list/map_parts = splittext("[map_view_size_raw]", "x")
+		if(length(map_parts) >= 2)
+			hud.cached_map_view_size = list(text2num(map_parts[1]), text2num(map_parts[2]))
+		if(!isnull(x) && !isnull(y) && !isnull(w) && !isnull(h))
+			hud.displace_hud_for_chat(list(x, y, w, h))
+		else
+			hud.displace_hud_for_chat(null)
+		return TRUE
+
 	if(type == "requestMetadata")
 		send_metadata()
 		return TRUE

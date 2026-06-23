@@ -91,6 +91,8 @@ export function useChatPlacement() {
           });
           setAnchors(pos.x, pos.y, browserW, browserH, screenX, screenY);
           saveChatRatio();
+          console.log('panel/bounds (setting change):', { x: pos.x, y: pos.y, w: browserW, h: browserH });
+          Byond.sendMessage('panel/bounds', { x: pos.x, y: pos.y, w: browserW, h: browserH });
           document.body.classList.add('onmap');
           document.body.style.backgroundColor = 'transparent';
           setIsOnMap(true);
@@ -122,6 +124,8 @@ export function useChatPlacement() {
           pos: `${browserX},${browserY}`,
         });
         setAnchors(browserX, browserY, browserW, browserH, screenX, screenY);
+        console.log('panel/bounds (initial):', { x: browserX, y: browserY, w: browserW, h: browserH });
+        Byond.sendMessage('panel/bounds', { x: browserX, y: browserY, w: browserW, h: browserH });
 
         document.body.classList.add('onmap');
         document.body.style.backgroundColor = 'transparent';
