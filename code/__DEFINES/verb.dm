@@ -57,7 +57,7 @@ _GAME_VERB_CONTEXT(owner_type, verb_path_name, verb_name, verb_desc, verb_catego
 #define GAME_VERB_HIDDEN(owner_type, verb_path_name, verb_name) \
 _GAME_VERB(owner_type, verb_path_name, verb_name, "", null, FALSE, TRUE)
 
-#define _GAME_VERB_PROC(owner_type, verb_path_name, verb_name, verb_desc, verb_category, show_in_context_menu, is_hidden, verb_args...) \
+#define _GAME_VERB_PROC(owner_type, verb_path_name, verb_name, verb_desc, verb_category, show_in_context_menu, is_hidden) \
 /datum/verb_metadata##owner_type/##verb_path_name \
 { \
 	name = ##verb_name; \
@@ -66,21 +66,21 @@ _GAME_VERB(owner_type, verb_path_name, verb_name, "", null, FALSE, TRUE)
 	verb_path = ##owner_type/proc/##verb_path_name; \
 	body_path = ##owner_type/proc/__gvb_##verb_path_name; \
 }; \
-##owner_type/proc/##verb_path_name(##verb_args) \
+##owner_type/proc/##verb_path_name() \
 { \
 	set name = ##verb_name; \
 	set desc = ##verb_desc; \
 	set hidden = ##is_hidden; \
 	set popup_menu = ##show_in_context_menu; \
 	set category = ##verb_category; \
-	__gvb_##verb_path_name(arglist(args)); \
+	SSverbs.invoke_verb(src, ##owner_type/proc/##verb_path_name, args); \
 }; \
-##owner_type/proc/__gvb_##verb_path_name(##verb_args)
+##owner_type/proc/__gvb_##verb_path_name(list/structured_args)
 
-#define GAME_VERB_PROC(owner_type, verb_path_name, verb_name, verb_desc, verb_category, verb_args...) \
-_GAME_VERB_PROC(owner_type, verb_path_name, verb_name, verb_desc, verb_category, FALSE, FALSE, ##verb_args)
+#define GAME_VERB_PROC(owner_type, verb_path_name, verb_name, verb_desc, verb_category) \
+_GAME_VERB_PROC(owner_type, verb_path_name, verb_name, verb_desc, verb_category, FALSE, FALSE)
 
-#define _GAME_VERB_SRC(owner_type, verb_path_name, src_value, verb_name, verb_desc, verb_category, show_in_context_menu, is_hidden, verb_args...) \
+#define _GAME_VERB_SRC(owner_type, verb_path_name, src_value, verb_name, verb_desc, verb_category, show_in_context_menu, is_hidden) \
 /datum/verb_metadata##owner_type/##verb_path_name \
 { \
 	name = ##verb_name; \
@@ -89,7 +89,7 @@ _GAME_VERB_PROC(owner_type, verb_path_name, verb_name, verb_desc, verb_category,
 	verb_path = ##owner_type/verb/##verb_path_name; \
 	body_path = ##owner_type/proc/__gvb_##verb_path_name; \
 }; \
-##owner_type/verb/##verb_path_name(##verb_args) \
+##owner_type/verb/##verb_path_name() \
 { \
 	set name = ##verb_name; \
 	set desc = ##verb_desc; \
@@ -97,14 +97,14 @@ _GAME_VERB_PROC(owner_type, verb_path_name, verb_name, verb_desc, verb_category,
 	set popup_menu = ##show_in_context_menu; \
 	set category = ##verb_category; \
 	set src in src_value; \
-	__gvb_##verb_path_name(arglist(args)); \
+	SSverbs.invoke_verb(src, ##owner_type/verb/##verb_path_name, args); \
 }; \
-##owner_type/proc/__gvb_##verb_path_name(##verb_args)
+##owner_type/proc/__gvb_##verb_path_name(list/structured_args)
 
-#define GAME_VERB_SRC(owner_type, verb_path_name, src_value, verb_name, verb_desc, verb_category, verb_args...) \
-_GAME_VERB_SRC(owner_type, verb_path_name, src_value, verb_name, verb_desc, verb_category, FALSE, FALSE, ##verb_args)
+#define GAME_VERB_SRC(owner_type, verb_path_name, src_value, verb_name, verb_desc, verb_category) \
+_GAME_VERB_SRC(owner_type, verb_path_name, src_value, verb_name, verb_desc, verb_category, FALSE, FALSE)
 
-#define _GAME_VERB_GLOBAL_PROC(verb_path_name, verb_name, verb_desc, verb_category, is_hidden, verb_args...) \
+#define _GAME_VERB_GLOBAL_PROC(verb_path_name, verb_name, verb_desc, verb_category, is_hidden) \
 /datum/verb_metadata/##verb_path_name \
 { \
 	name = ##verb_name; \
@@ -113,18 +113,18 @@ _GAME_VERB_SRC(owner_type, verb_path_name, src_value, verb_name, verb_desc, verb
 	verb_path = /proc/##verb_path_name; \
 	body_path = /proc/__gvb_##verb_path_name; \
 }; \
-/proc/##verb_path_name(##verb_args) \
+/proc/##verb_path_name() \
 { \
 	set name = ##verb_name; \
 	set desc = ##verb_desc; \
 	set hidden = ##is_hidden; \
 	set category = ##verb_category; \
-	__gvb_##verb_path_name(arglist(args)); \
+	SSverbs.invoke_verb(src, /proc/##verb_path_name, args); \
 }; \
-/proc/__gvb_##verb_path_name(##verb_args)
+/proc/__gvb_##verb_path_name(list/structured_args)
 
-#define GAME_VERB_GLOBAL_PROC(verb_path_name, verb_name, verb_desc, verb_category, verb_args...) \
-_GAME_VERB_GLOBAL_PROC(verb_path_name, verb_name, verb_desc, verb_category, FALSE, ##verb_args)
+#define GAME_VERB_GLOBAL_PROC(verb_path_name, verb_name, verb_desc, verb_category) \
+_GAME_VERB_GLOBAL_PROC(verb_path_name, verb_name, verb_desc, verb_category, FALSE)
 
 #define INVOKE_GAME_VERB(target, verb_path, args...) SSverbs.invoke(target, /datum/verb_metadata##verb_path, ##args)
 #define ASSIGN_GAME_VERB(target, verb_path) SSverbs.assign_verb(target, /datum/verb_metadata##verb_path)
