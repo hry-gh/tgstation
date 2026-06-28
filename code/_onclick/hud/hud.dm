@@ -720,11 +720,12 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 	// BYOND screen_loc Y is bottom-up but winset pos Y is top-down
 	var/chat_bottom = view_size[2] - (scaled_y + scaled_h)
 	var/chat_left = scaled_x
-	// Add one tile of padding to account for zoom scaling imprecision
-	chat_left -= ICON_SIZE_X
-	chat_bottom -= ICON_SIZE_Y
-	scaled_w += ICON_SIZE_X * 2
-	scaled_h += ICON_SIZE_Y * 2
+	// Add half-tile padding to account for zoom scaling imprecision
+	var/hpad = ICON_SIZE_X / 2
+	chat_left -= hpad
+	chat_bottom -= hpad
+	scaled_w += hpad * 2
+	scaled_h += hpad * 2
 	chat_rect_viewport = list(chat_left, chat_bottom, scaled_w, scaled_h)
 	to_chat(mymob, span_notice("displace_hud: view=[our_view] view_px=[view_size[1]]x[view_size[2]] map_view=[map_w]x[map_h] scale=([scale_x],[scale_y]) chat_input=([chat_x],[chat_y],[chat_w],[chat_h]) chat_scaled=([scaled_x],[scaled_y],[scaled_w],[scaled_h]) chat_converted=(left=[chat_left],bottom=[chat_bottom])"))
 	// Determine shift direction based on which half of the screen the chat center is in
