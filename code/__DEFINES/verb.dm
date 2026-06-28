@@ -126,7 +126,7 @@ _GAME_VERB_SRC(owner_type, verb_path_name, src_value, verb_name, verb_desc, verb
 #define GAME_VERB_GLOBAL_PROC(verb_path_name, verb_name, verb_desc, verb_category) \
 _GAME_VERB_GLOBAL_PROC(verb_path_name, verb_name, verb_desc, verb_category, FALSE)
 
-#define INVOKE_GAME_VERB(target, verb_path, args...) SSverbs.invoke(target, /datum/verb_metadata##verb_path, ##args)
+#define INVOKE_GAME_VERB(target, verb_path, args...) SSverbs.invoke(target, /datum/verb_metadata##verb_path, list(##args))
 #define ASSIGN_GAME_VERB(target, verb_path) SSverbs.assign_verb(target, /datum/verb_metadata##verb_path)
 #define UNASSIGN_GAME_VERB(target, verb_path) SSverbs.unassign_verb(target, /datum/verb_metadata##verb_path)
 
