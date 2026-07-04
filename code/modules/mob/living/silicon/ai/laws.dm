@@ -1,6 +1,5 @@
 
-DEFINE_PROC_VERB(/mob/living/silicon/ai, show_laws_verb, "Show Laws", \
-	"Check what your laws are privately. Also ensures all synced cyborgs are up to date with your laws, reminds them of your laws.", FALSE, "AI Commands")
+GAME_VERB_PROC_DESC(/mob/living/silicon/ai, show_laws_verb, "Show Laws", "Check what your laws are privately. Also ensures all synced cyborgs are up to date with your laws, reminds them of your laws.", "AI Commands")
 	if(usr.stat == DEAD)
 		return //won't work if dead
 	src.show_laws()

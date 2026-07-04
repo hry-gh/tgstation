@@ -168,7 +168,8 @@
 	return
 
 // The IC tab was removed recently as of commenting. This should probably be adjusted.
-DEFINE_VERB(/mob/eye/imaginary_friend/dream_projection, stop_projection, "Stop Projection", "Stop astrally projecting and return to your body.", FALSE, "IC")
+GAME_VERB_DESC(/mob/eye/imaginary_friend/dream_projection, stop_projection, "Stop Projection", "Stop astrally projecting and return to your body.", "IC")
+
 	qdel(src)
 
 /mob/eye/imaginary_friend/dream_projection/attach_to_owner(mob/living/imaginary_friend_owner)

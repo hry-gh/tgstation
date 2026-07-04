@@ -2,7 +2,7 @@ GLOBAL_LIST_EMPTY(escape_menus)
 
 /// Opens the escape menu.
 /// Verb, hardcoded to Escape, set in the client skin.
-DEFINE_VERB(/client, open_escape_menu, "Open Escape Menu", "", TRUE, "")
+GAME_VERB_HIDDEN(/client, open_escape_menu, "Open Escape Menu")
 	var/current_escape_menu = GLOB.escape_menus[ckey]
 	if (!isnull(current_escape_menu))
 		qdel(current_escape_menu)
