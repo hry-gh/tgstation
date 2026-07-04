@@ -23,7 +23,8 @@
 	set popup_menu = ##show_in_context_menu; \
 	set category = ##verb_category; \
 	set instant = ##is_instant; \
-	__gvb_##verb_path_name(arglist(args)); \
+	SHOULD_NOT_OVERRIDE(TRUE); \
+	VERB_QUEUE_OR_FIRE(__gvb_##verb_path_name, src, PROC_REF, SSverb_manager); \
 }; \
 ##owner_type/proc/__gvb_##verb_path_name(##verb_args)
 
@@ -55,7 +56,8 @@ _GAME_VERB(owner_type, verb_path_name, verb_name, "", null, FALSE, TRUE, TRUE, #
 	set hidden = ##is_hidden; \
 	set popup_menu = ##show_in_context_menu; \
 	set category = ##verb_category; \
-	__gvb_##verb_path_name(arglist(args)); \
+	SHOULD_NOT_OVERRIDE(TRUE); \
+	VERB_QUEUE_OR_FIRE(__gvb_##verb_path_name, src, PROC_REF, SSverb_manager); \
 }; \
 ##owner_type/proc/__gvb_##verb_path_name(##verb_args)
 
@@ -82,7 +84,8 @@ _GAME_VERB_PROC(owner_type, verb_path_name, verb_name, verb_desc, verb_category,
 	set popup_menu = ##show_in_context_menu; \
 	set category = ##verb_category; \
 	set src in src_value; \
-	__gvb_##verb_path_name(arglist(args)); \
+	SHOULD_NOT_OVERRIDE(TRUE); \
+	VERB_QUEUE_OR_FIRE(__gvb_##verb_path_name, src, PROC_REF, SSverb_manager); \
 }; \
 ##owner_type/proc/__gvb_##verb_path_name(##verb_args)
 
@@ -107,7 +110,7 @@ _GAME_VERB_SRC(owner_type, verb_path_name, src_value, verb_name, verb_desc, verb
 	set desc = ##verb_desc; \
 	set hidden = ##is_hidden; \
 	set category = ##verb_category; \
-	__gvb_##verb_path_name(arglist(args)); \
+	VERB_QUEUE_OR_FIRE(__gvb_##verb_path_name, GLOBAL_PROC, GLOBAL_PROC_REF, SSverb_manager); \
 }; \
 /proc/__gvb_##verb_path_name(##verb_args)
 

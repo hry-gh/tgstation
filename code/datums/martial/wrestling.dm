@@ -8,7 +8,6 @@ If you make a derivative work from this code, you must include this notification
 /datum/martial_art/wrestling
 	name = "Wrestling"
 	id = MARTIALART_WRESTLING
-	help_verb = /mob/living/proc/wrestling_help
 	VAR_PRIVATE/datum/action/slam/slam
 	VAR_PRIVATE/datum/action/throw_wrassle/throw_wrassle
 	VAR_PRIVATE/datum/action/kick/kick
