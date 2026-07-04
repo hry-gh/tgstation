@@ -114,7 +114,8 @@
 		+ "</body></html>", "window=photo_showing;size=[scribble ? "480x580" : "480x480"]")
 	onclose(user, "[name]")
 
-DEFINE_VERB(/obj/item/photo, rename, "Rename photo", "", FALSE, "")
+GAME_VERB_SRC(/obj/item/photo, rename, usr, "Rename photo", null)
+
 	var/n_name = tgui_input_text(usr, "What would you like to label the photo?", "Photo Labelling", max_length = MAX_NAME_LEN)
 	//loc.loc check is for making possible renaming photos in clipboards
 	if(n_name && (loc == usr || loc.loc && loc.loc == usr) && usr.stat == CONSCIOUS && !usr.incapacitated)

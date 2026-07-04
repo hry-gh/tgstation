@@ -137,10 +137,8 @@
 		current_range = spray_range
 	to_chat(user, span_notice("You switch the nozzle setting to [stream_mode ? "\"stream\"":"\"spray\""]."))
 
-DEFINE_VERB(/obj/item/reagent_containers/spray, empty, "Empty Spray Bottle", "", FALSE, "")
-	empty_bottle()
+GAME_VERB_SRC(/obj/item/reagent_containers/spray, empty, usr, "Empty Spray Bottle", null)
 
-/obj/item/reagent_containers/spray/proc/empty_bottle()
 	if(usr.incapacitated)
 		return
 	if (tgui_alert(usr, "Are you sure you want to empty that?", "Empty Bottle:", list("Yes", "No")) != "Yes")

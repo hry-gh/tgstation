@@ -70,7 +70,8 @@
 	else
 		return ..()
 
-DEFINE_WORLD_OBJECT_VERB(/obj/item/modular_computer/laptop, open_computer, view(1), "Toggle Open", "", FALSE, "")
+GAME_VERB_SRC(/obj/item/modular_computer/laptop, open_computer, view(1), "Toggle Open", null)
+
 	try_toggle_open(usr)
 
 /obj/item/modular_computer/laptop/proc/try_toggle_open(mob/living/user)

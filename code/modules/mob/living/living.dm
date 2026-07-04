@@ -515,11 +515,9 @@
 
 //mob verbs are a lot faster than object verbs
 //for more info on why this is not atom/pull, see examinate() in mob.dm
-DEFINE_VERB(/mob/living, pulled, "Pull", "", FALSE, "", atom/movable/AM as mob|obj in oview(1))
-	if(istype(AM) && Adjacent(AM))
-		start_pulling(AM)
-	else if(!combat_mode) //Don;'t cancel pulls if misclicking in combat mode.
-		stop_pulling()
+GAME_VERB(/mob/living, pulled, "Pull", null, atom/movable/thing_pulled as mob|obj in oview(1))
+	if(istype(thing_pulled) && Adjacent(thing_pulled))
+		start_pulling(thing_pulled)
 
 /mob/living/stop_pulling()
 	if(ismob(pulling))
@@ -537,7 +535,7 @@ DEFINE_VERB(/mob/living, pulled, "Pull", "", FALSE, "", atom/movable/AM as mob|o
 	log_message("points at [pointing_at]", LOG_EMOTE)
 	visible_message(span_infoplain("[span_name("[src]")] points at [pointing_at]."), span_notice("You point at [pointing_at]."))
 
-DEFINE_VERB(/mob/living, succumb, "succumb", "", TRUE, "", whispered as num|null)
+GAME_VERB_HIDDEN(/mob/living, succumb, "succumb", whispered as num|null)
 	if (!CAN_SUCCUMB(src))
 		if(HAS_TRAIT(src, TRAIT_SUCCUMB_OVERRIDE))
 			if(whispered)
@@ -595,7 +593,8 @@ DEFINE_VERB(/mob/living, succumb, "succumb", "", TRUE, "", whispered as num|null
 
 // MOB PROCS //END
 
-DEFINE_PROC_VERB(/mob/living, mob_sleep, "Sleep", "", TRUE, "")
+GAME_VERB_PROC(/mob/living, mob_sleep, "Sleep", null)
+
 	if(IsSleeping())
 		to_chat(src, span_warning("You are already sleeping!"))
 		return
@@ -2585,6 +2584,12 @@ GLOBAL_LIST_EMPTY(fire_appearances)
 	else if(!(movement_type & (FLYING | FLOATING)) && !usable_hands && !usable_legs) //Lost a hand, not flying, no hands left, no legs.
 		ADD_TRAIT(src, TRAIT_IMMOBILIZED, LACKING_LOCOMOTION_APPENDAGES_TRAIT)
 
+/mob/living/perform_hand_swap(held_index)
+	//safeguard for one-handed mobs lol
+	if(num_hands == 1)
+		held_index = 1
+
+	return ..()
 
 /// Whether or not this mob will escape from storages while being picked up/held.
 /mob/living/proc/will_escape_storage()
