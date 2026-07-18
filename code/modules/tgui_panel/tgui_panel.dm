@@ -7,11 +7,14 @@
  * tgui_panel datum
  * Hosts tgchat and other nice features.
  */
+#define TGPANEL_POPUP_WINDOW "tgui_panel_popup"
+
 /datum/tgui_panel
 	var/client/client
 	var/datum/tgui_window/window
 	var/broken = FALSE
 	var/initialized_at
+	var/current_layout
 	/// Each client notifies on protected playback, so this prevents spamming admins.
 	var/static/admins_warned = FALSE
 
@@ -109,6 +112,21 @@
 		client.init_verbs()
 		return TRUE
 
+	if(type == "panel/toggle_layout")
+		winset(client, "map", "focus=true")
+		var/current = client.prefs.read_preference(/datum/preference/choiced/tgpanel_layout)
+		var/next
+		switch(current)
+			if(TGPANEL_ONMAP)
+				next = TGPANEL_PANEL
+			if(TGPANEL_PANEL)
+				next = TGPANEL_ONMAP
+			else
+				next = TGPANEL_ONMAP
+		log_tgui(client, "panel/toggle_layout: [current] -> [next]", context = "tgui_panel")
+		client.prefs.update_preference(GLOB.preference_entries[/datum/preference/choiced/tgpanel_layout], next)
+		return TRUE
+
 	if(type == "verbs/request_typepaths")
 		var/parent_text = payload["parent"]
 		var/browse_type = text2path(parent_text)
@@ -147,13 +165,13 @@
 			return TRUE
 		var/datum/verb_arg_metadata/entity_arg
 		for(var/datum/verb_arg_metadata/arg in arg_list)
-			if(arg.arg_type & VERB_ARG_TYPE_ENTITY)
+			if(arg.arg_type & (VERB_ARG_TYPE_MOB | VERB_ARG_TYPE_OBJ | VERB_ARG_TYPE_TURF | VERB_ARG_TYPE_AREA | VERB_ARG_TYPE_DATUM | VERB_ARG_TYPE_ATOM))
 				entity_arg = arg
 				break
 		if(!entity_arg)
 			return TRUE
 		var/list/target_data = list()
-		var/list/source_atoms = entity_arg.get_targets(client)
+		var/list/source_atoms = get_targets_for_arg(entity_arg)
 		for(var/atom/target in source_atoms)
 			target_data += list(list("name" = "[target]", "ref" = REF(target)))
 		window.send_message("verbs/targets", list("targets" = target_data))
@@ -169,14 +187,34 @@
 			var/list/resolved_args = resolve_invoke_args(payload["args"], admin_meta.arguments)
 			SSadmin_verbs.dynamic_invoke_verb(client, admin_meta.type, resolved_args)
 			return TRUE
-		var/datum/verb_metadata/meta = SSverbs.verbs_by_verb_path[verb_path]
-		if(!meta)
-			return TRUE
 		var/target = resolve_verb_target(verb_path)
 		if(!target)
 			return TRUE
-		var/list/resolved_args = resolve_invoke_args(payload["args"], meta.arguments)
-		call(target, meta.body_path)(resolved_args)
+		var/datum/verb_metadata/meta = SSverbs.verbs_by_verb_path[verb_path]
+		if(meta)
+			var/list/resolved_args = resolve_invoke_args(payload["args"], meta.arguments)
+			call(target, meta.body_path)(resolved_args)
+		else
+			call(target, verb_path)()
+		return TRUE
+
+	if(type == "panel/bounds")
+		var/x = payload["x"]
+		var/y = payload["y"]
+		var/w = payload["w"]
+		var/h = payload["h"]
+		var/datum/hud/hud = client.mob?.hud_used
+		if(!hud)
+			return TRUE
+		// Winget the map view-size and cache it BEFORE calling displacement (which must not yield)
+		var/map_view_size_raw = winget(client, "mapwindow.map", "view-size")
+		var/list/map_parts = splittext("[map_view_size_raw]", "x")
+		if(length(map_parts) >= 2)
+			hud.cached_map_view_size = list(text2num(map_parts[1]), text2num(map_parts[2]))
+		if(!isnull(x) && !isnull(y) && !isnull(w) && !isnull(h))
+			hud.displace_hud_for_chat(list(x, y, w, h))
+		else
+			hud.displace_hud_for_chat(null)
 		return TRUE
 
 	if(type == "requestMetadata")
@@ -206,6 +244,40 @@
 	if(client.mob && (verb_path in client.mob.verbs))
 		return client.mob
 	return null
+
+/datum/tgui_panel/proc/get_targets_for_arg(datum/verb_arg_metadata/arg)
+	var/list/targets = list()
+	switch(arg.source)
+		if(VERB_ARG_SOURCE_WORLD)
+			if(arg.arg_type & VERB_ARG_TYPE_MOB)
+				return GLOB.mob_list
+			if(arg.arg_type & VERB_ARG_TYPE_AREA)
+				return get_sorted_areas()
+			if(arg.arg_type & VERB_ARG_TYPE_TURF)
+				for(var/mob/player in GLOB.player_list)
+					var/turf/player_turf = get_turf(player)
+					if(player_turf)
+						targets |= player_turf
+				return targets
+			if(arg.arg_type & (VERB_ARG_TYPE_OBJ | VERB_ARG_TYPE_DATUM | VERB_ARG_TYPE_ATOM))
+				if(client.mob)
+					return view(client.view, client.mob)
+		if(VERB_ARG_SOURCE_VIEW)
+			if(!client.mob)
+				return targets
+			var/list/visible = view(client.view, client.mob)
+			if(arg.arg_type & VERB_ARG_TYPE_MOB)
+				for(var/mob/target in visible)
+					targets += target
+			else if(arg.arg_type & VERB_ARG_TYPE_OBJ)
+				for(var/obj/target in visible)
+					targets += target
+			else if(arg.arg_type & VERB_ARG_TYPE_TURF)
+				for(var/turf/target in visible)
+					targets += target
+			else
+				return visible
+	return targets
 
 /**
  * public
@@ -259,3 +331,54 @@
 
 /datum/tgui_panel/proc/send_hotkey_mode()
 	window.send_message("verbs/hotkey_mode", list("hotkeys" = client.hotkeys))
+
+/datum/tgui_panel/proc/create_browser(layout = TGPANEL_ONMAP, force = FALSE)
+	if(force)
+		winset(client, "browseroutput", list("parent" = ""))
+
+	log_tgui(client, "create_browser: [current_layout] -> [layout], force=[force]", context = "tgui_panel")
+
+	// Close the popup window if we're leaving window mode
+	if(current_layout == TGPANEL_WINDOW && layout != TGPANEL_WINDOW)
+		client << browse(null, "window=[TGPANEL_POPUP_WINDOW]")
+
+	current_layout = layout
+
+	switch(layout)
+		if(TGPANEL_ONMAP)
+			winset(client, "browseroutput", list(
+				"parent" = "mapwindow",
+				"type" = "BROWSER",
+				"background-color" = "none",
+				"inner-background-color" = "transparent",
+			))
+			winset(client, "split", list("right" = ""))
+
+		if(TGPANEL_PANEL)
+			winset(client, "browseroutput", list(
+				"parent" = "output_browser",
+				"type" = "BROWSER",
+				"pos" = "0,0",
+				"size" = "640x456",
+				"anchor1" = "0,0",
+				"anchor2" = "100,100",
+			))
+			winset(client, "split", list("right" = "info_and_buttons"))
+
+		if(TGPANEL_WINDOW)
+			client << browse("<html><head><title>Chat</title></head><body style='margin:0;background:#202020'></body></html>", "window=[TGPANEL_POPUP_WINDOW];size=640x456;can_close=0;can_resize=0;titlebar=0")
+			winset(client, TGPANEL_POPUP_WINDOW, list("background-color" = "#202020"))
+			winset(client, "browseroutput", list(
+				"parent" = TGPANEL_POPUP_WINDOW,
+				"type" = "BROWSER",
+				"pos" = "0,0",
+				"size" = "640x456",
+				"anchor1" = "0,0",
+				"anchor2" = "100,100",
+			))
+			winset(client, "split", list("right" = ""))
+
+	client.view_size?.setDefault(VIEWPORT_USE_PREF)
+
+	if(force)
+		initialize(force = TRUE)
