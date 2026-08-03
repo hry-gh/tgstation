@@ -112,6 +112,7 @@
 #define HUD_PAI_NEWSCASTER "painewscaster"
 #define HUD_PAI_HOST_MONITOR "paimonitor"
 #define HUD_PAI_GPS "paigps"
+#define HUD_PAI_REST "pairest"
 
 #define HUD_GHOST_SPAWNERS "ghost_spawners"
 #define HUD_GHOST_ORBIT "ghost_orbit"
@@ -461,7 +462,7 @@
 // pAI/silicon bottom-left (WEST area, SOUTH)
 #define HUD_DISPLACEMENT_GROUP_PAI_LEFT list( \
 	HUD_PAI_SOFTWARE, HUD_PAI_SHELL, HUD_PAI_CHASSIS, \
-	HUD_AI_STATE_LAWS, HUD_CYBORG_LAMP)
+	HUD_PAI_REST, HUD_AI_STATE_LAWS, HUD_CYBORG_LAMP)
 
 // pAI/silicon center (CENTER area, SOUTH)
 #define HUD_DISPLACEMENT_GROUP_PAI_CENTER list( \
