@@ -53,11 +53,8 @@ body.onmap {
     .ChatMessage {
       opacity: 0;
       transition: opacity 600ms ease;
-      -webkit-text-stroke: 0.02rem hsla(0, 0%, 100%, 0.4);
-      text-shadow:
-        0 0 6px hsla(225, 30%, 5%, 1),
-        0 0 12px hsla(225, 30%, 5%, 0.8),
-        0 1px 3px hsla(225, 30%, 5%, 0.9);
+      -webkit-text-stroke: 2px black;
+      paint-order: stroke fill;
     }
 
     .ChatMessage--recent {
@@ -92,7 +89,7 @@ body.onmap {
       .ChatMessage {
         opacity: 1;
         -webkit-text-stroke: unset;
-        text-shadow: none;
+        paint-order: normal;
         transition: opacity 200ms ease;
       }
     }
