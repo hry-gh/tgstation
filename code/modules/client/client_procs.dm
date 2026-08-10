@@ -278,6 +278,7 @@ GLOBAL_LIST_INIT(unrecommended_builds, list(
 
 	// Instantiate tgui panel
 	tgui_panel = new(src, "browseroutput")
+	tgui_panel.create_browser(prefs.read_preference(/datum/preference/choiced/tgpanel_layout))
 
 	tgui_say = new(src, "tgui_say")
 
