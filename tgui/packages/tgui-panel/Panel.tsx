@@ -5,7 +5,7 @@
  */
 
 import { useAtom, useAtomValue } from 'jotai';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Pane } from 'tgui/layouts';
 import { Button, Section, Stack } from 'tgui-core/components';
 import { visibleAtom } from './audio/atoms';
@@ -34,31 +34,20 @@ export function Panel(props) {
   useChatPersistence();
   const { isOnMap, isPopup, chatCorner } = useChatPlacement();
   const frameless = isOnMap && settings.chatFrameless;
-  const fadeTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   useKeepAlive();
 
+  // Frameless mode: per-message fade managed by the renderer
   useEffect(() => {
-    if (!frameless) {
-      document.body.classList.remove('frameless', 'chat-active');
-      return;
+    if (frameless) {
+      document.body.classList.add('frameless');
+      chatRenderer.setFrameless(true);
+    } else {
+      document.body.classList.remove('frameless');
+      chatRenderer.setFrameless(false);
     }
-    document.body.classList.add('frameless');
-    const onBatch = () => {
-      document.body.classList.add('chat-active');
-      if (fadeTimerRef.current) {
-        clearTimeout(fadeTimerRef.current);
-      }
-      fadeTimerRef.current = setTimeout(() => {
-        document.body.classList.remove('chat-active');
-      }, 8000);
-    };
-    chatRenderer.events.on('batchProcessed', onBatch);
     return () => {
-      chatRenderer.events.off('batchProcessed', onBatch);
-      if (fadeTimerRef.current) {
-        clearTimeout(fadeTimerRef.current);
-      }
-      document.body.classList.remove('frameless', 'chat-active');
+      document.body.classList.remove('frameless');
+      chatRenderer.setFrameless(false);
     };
   }, [frameless]);
 

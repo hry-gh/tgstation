@@ -105,6 +105,9 @@ function updateMessageBadge(message) {
   }
 }
 
+/** Duration in ms before a message loses its --recent class in frameless mode */
+const FRAMELESS_MESSAGE_LINGER = 8000;
+
 class ChatRenderer {
   loaded: boolean;
   rootNode: HTMLElement | null;
@@ -120,6 +123,8 @@ class ChatRenderer {
   currentJob: string | null;
   currentCharacter: string | null;
   handleScroll: (type: any) => void;
+  frameless: boolean;
+  private framelessTimers: Map<HTMLElement, ReturnType<typeof setTimeout>>;
 
   constructor() {
     this.loaded = false;
@@ -129,6 +134,8 @@ class ChatRenderer {
     this.visibleMessages = [];
     this.page = null;
     this.events = new EventEmitter();
+    this.frameless = false;
+    this.framelessTimers = new Map();
     // Scroll handler
 
     this.scrollNode = null;
@@ -189,6 +196,30 @@ class ChatRenderer {
       this.processBatch(this.queue);
       this.queue = [];
     }
+  }
+
+  setFrameless(value: boolean) {
+    this.frameless = value;
+    if (!value) {
+      // Exiting frameless: clear all timers and remove --recent from everything
+      for (const [node, timer] of this.framelessTimers) {
+        clearTimeout(timer);
+        node.classList.remove('ChatMessage--recent');
+      }
+      this.framelessTimers.clear();
+    }
+  }
+
+  private scheduleMessageFade(node: HTMLElement) {
+    if (!this.frameless) return;
+    node.classList.add('ChatMessage--recent');
+    const existing = this.framelessTimers.get(node);
+    if (existing) clearTimeout(existing);
+    const timer = setTimeout(() => {
+      node.classList.remove('ChatMessage--recent');
+      this.framelessTimers.delete(node);
+    }, FRAMELESS_MESSAGE_LINGER);
+    this.framelessTimers.set(node, timer);
   }
 
   assignStyle(style = {}) {
@@ -411,6 +442,9 @@ class ChatRenderer {
       if (combinable) {
         combinable.times = (combinable.times || 1) + 1;
         updateMessageBadge(combinable);
+        if (combinable.node) {
+          this.scheduleMessageFade(combinable.node);
+        }
         continue;
       }
       // Reuse message node
@@ -540,6 +574,7 @@ class ChatRenderer {
       if (canPageAcceptType(this.page, message.type)) {
         fragment.appendChild(node);
         this.visibleMessages.push(message);
+        this.scheduleMessageFade(node);
       }
     }
     if (node) {
