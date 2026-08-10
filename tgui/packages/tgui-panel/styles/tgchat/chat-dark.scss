@@ -24,6 +24,76 @@ body.onmap {
     box-shadow: 0 0 4px hsla(225, 30%, 5%, 0.5);
     overflow: hidden;
   }
+
+  // Frameless mode: chat is invisible when idle, pops in on new messages, full frame on hover
+  &.frameless {
+    .Window {
+      background: transparent !important;
+      border-color: transparent !important;
+      box-shadow: none !important;
+    }
+
+    .Section,
+    .ResizeHandle,
+    .Chat__scrollButton {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 300ms ease;
+    }
+
+    #chat-pane {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 600ms ease;
+      overflow: hidden !important;
+    }
+
+    .ChatMessage {
+      text-shadow:
+        0 0 4px hsla(225, 30%, 5%, 0.9),
+        0 0 8px hsla(225, 30%, 5%, 0.6),
+        0 1px 2px hsla(225, 30%, 5%, 0.8);
+    }
+
+    &.chat-active {
+      #chat-pane {
+        opacity: 1;
+        pointer-events: none;
+        transition: opacity 200ms ease;
+      }
+    }
+
+    &:hover {
+      .Window {
+        background: var(--color-base) !important;
+        border-color: hsla(225, 20%, 40%, 0.2) !important;
+        box-shadow: 0 0 4px hsla(225, 30%, 5%, 0.5) !important;
+        transition:
+          background 200ms ease,
+          border-color 200ms ease,
+          box-shadow 200ms ease;
+      }
+
+      .Section,
+      .ResizeHandle,
+      .Chat__scrollButton {
+        opacity: 1;
+        pointer-events: auto;
+        transition: opacity 200ms ease;
+      }
+
+      #chat-pane {
+        opacity: 1;
+        pointer-events: auto;
+        overflow-y: auto !important;
+        transition: opacity 200ms ease;
+      }
+
+      .ChatMessage {
+        text-shadow: none;
+      }
+    }
+  }
 }
 
 .ResizeHandle {

@@ -5,14 +5,15 @@
  */
 
 import { useAtom, useAtomValue } from 'jotai';
-import { useEffect } from 'react';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Pane } from 'tgui/layouts';
 import { Button, Section, Stack } from 'tgui-core/components';
 import { visibleAtom } from './audio/atoms';
 import { NowPlayingWidget } from './audio/NowPlayingWidget';
 import { ChatPanel } from './chat/ChatPanel';
 import { ChatTabs } from './chat/ChatTabs';
+import { ResizeHandles } from './chat/ResizeHandles';
+import { chatRenderer } from './chat/renderer';
 import { useChatPersistence } from './chat/use-chat-persistence';
 import { useChatPlacement } from './chat/use-chat-placement';
 import { gameAtom } from './game/atoms';
@@ -23,17 +24,43 @@ import { ReconnectButton } from './reconnect';
 import { settingsVisibleAtom } from './settings/atoms';
 import { SettingsPanel } from './settings/SettingsPanel';
 import { useSettings } from './settings/use-settings';
-import { ResizeHandles } from './chat/ResizeHandles';
 import { CommandBar } from './verbs/CommandBar';
 
 export function Panel(props) {
   const [audioVisible, setAudioVisible] = useAtom(visibleAtom);
   const game = useAtomValue(gameAtom);
-  const { settings } = useSettings();
+  const { settings, updateSettings } = useSettings();
   const [settingsVisible, setSettingsVisible] = useAtom(settingsVisibleAtom);
   useChatPersistence();
   const { isOnMap, isPopup, chatCorner } = useChatPlacement();
+  const frameless = isOnMap && settings.chatFrameless;
+  const fadeTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   useKeepAlive();
+
+  useEffect(() => {
+    if (!frameless) {
+      document.body.classList.remove('frameless', 'chat-active');
+      return;
+    }
+    document.body.classList.add('frameless');
+    const onBatch = () => {
+      document.body.classList.add('chat-active');
+      if (fadeTimerRef.current) {
+        clearTimeout(fadeTimerRef.current);
+      }
+      fadeTimerRef.current = setTimeout(() => {
+        document.body.classList.remove('chat-active');
+      }, 8000);
+    };
+    chatRenderer.events.on('batchProcessed', onBatch);
+    return () => {
+      chatRenderer.events.off('batchProcessed', onBatch);
+      if (fadeTimerRef.current) {
+        clearTimeout(fadeTimerRef.current);
+      }
+      document.body.classList.remove('frameless', 'chat-active');
+    };
+  }, [frameless]);
 
   const onPopupDrag = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -70,10 +97,7 @@ export function Panel(props) {
       {isPopup && (
         <>
           <ResizeHandles allEdges target="tgui_panel_popup" />
-          <div
-            className="PanelDragBar"
-            onMouseDown={onPopupDrag}
-          />
+          <div className="PanelDragBar" onMouseDown={onPopupDrag} />
         </>
       )}
       <Stack fill vertical>
@@ -93,11 +117,33 @@ export function Panel(props) {
                   tooltip={isOnMap ? 'Switch to panel' : 'Switch to overlay'}
                   tooltipPosition="bottom-start"
                   onClick={() => {
-                    console.log('panel/toggle_layout: sending, isOnMap =', isOnMap);
+                    console.log(
+                      'panel/toggle_layout: sending, isOnMap =',
+                      isOnMap,
+                    );
                     Byond.sendMessage('panel/toggle_layout');
                   }}
                 />
               </Stack.Item>
+              {isOnMap && (
+                <Stack.Item>
+                  <Button
+                    color="transparent"
+                    icon={settings.chatFrameless ? 'eye-slash' : 'eye'}
+                    tooltip={
+                      settings.chatFrameless
+                        ? 'Show chat frame'
+                        : 'Hide chat frame (frameless)'
+                    }
+                    tooltipPosition="bottom-start"
+                    onClick={() =>
+                      updateSettings({
+                        chatFrameless: !settings.chatFrameless,
+                      })
+                    }
+                  />
+                </Stack.Item>
+              )}
               <Stack.Item>
                 <Button
                   color="grey"
