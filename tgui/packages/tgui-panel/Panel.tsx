@@ -91,7 +91,7 @@ export function Panel(props) {
       )}
       <Stack fill vertical>
         <Stack.Item>
-          <Section fitted>
+          <Section fitted className="Panel__header">
             <Stack mr={1} align="center">
               <Stack.Item grow>
                 <ChatTabs />

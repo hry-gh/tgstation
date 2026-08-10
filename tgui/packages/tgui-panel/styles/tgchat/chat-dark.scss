@@ -33,12 +33,16 @@ body.onmap {
       box-shadow: none !important;
     }
 
-    .Section,
+    .Panel__header,
     .ResizeHandle,
     .Chat__scrollButton {
       opacity: 0;
       pointer-events: none;
       transition: opacity 300ms ease;
+    }
+
+    .Section {
+      background: transparent !important;
     }
 
     #chat-pane {
@@ -71,7 +75,7 @@ body.onmap {
           box-shadow 200ms ease;
       }
 
-      .Section,
+      .Panel__header,
       .ResizeHandle,
       .Chat__scrollButton {
         opacity: 1;
