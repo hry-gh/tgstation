@@ -36,6 +36,8 @@ export function Panel(props) {
   const frameless = isOnMap && settings.chatFrameless;
   useKeepAlive();
 
+  const messageBg = frameless && settings.chatMessageBg;
+
   // Frameless mode: per-message fade managed by the renderer
   useEffect(() => {
     if (frameless) {
@@ -50,6 +52,11 @@ export function Panel(props) {
       chatRenderer.setFrameless(false);
     };
   }, [frameless]);
+
+  useEffect(() => {
+    document.body.classList.toggle('chat-message-bg', messageBg);
+    return () => document.body.classList.remove('chat-message-bg');
+  }, [messageBg]);
 
   const onPopupDrag = useCallback((e: React.MouseEvent) => {
     e.preventDefault();

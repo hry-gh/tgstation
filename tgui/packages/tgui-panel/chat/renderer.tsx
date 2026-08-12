@@ -105,8 +105,8 @@ function updateMessageBadge(message) {
   }
 }
 
-/** Duration in ms before a message loses its --recent class in frameless mode */
 const FRAMELESS_MESSAGE_LINGER = 8000;
+const FRAMELESS_FADE_DURATION = 600;
 
 class ChatRenderer {
   loaded: boolean;
@@ -146,6 +146,10 @@ class ChatRenderer {
     this.handleScroll = (evt) => {
       const node = this.scrollNode;
       if (!node) {
+        return;
+      }
+      if (this.frameless && !document.body.matches(':hover')) {
+        this.scrollToBottom();
         return;
       }
       const height = node.scrollHeight;
@@ -200,11 +204,15 @@ class ChatRenderer {
 
   setFrameless(value: boolean) {
     this.frameless = value;
-    if (!value) {
+    if (value) {
+      this.scrollTracking = true;
+      store.set(scrollTrackingAtom, true);
+      this.scrollToBottom();
+    } else {
       // Exiting frameless: clear all timers and remove --recent from everything
       for (const [node, timer] of this.framelessTimers) {
         clearTimeout(timer);
-        node.classList.remove('ChatMessage--recent');
+        node.classList.remove('ChatMessage--recent', 'ChatMessage--fading');
       }
       this.framelessTimers.clear();
     }
@@ -213,11 +221,16 @@ class ChatRenderer {
   private scheduleMessageFade(node: HTMLElement) {
     if (!this.frameless) return;
     node.classList.add('ChatMessage--recent');
+    node.classList.remove('ChatMessage--fading');
     const existing = this.framelessTimers.get(node);
     if (existing) clearTimeout(existing);
     const timer = setTimeout(() => {
-      node.classList.remove('ChatMessage--recent');
-      this.framelessTimers.delete(node);
+      node.classList.add('ChatMessage--fading');
+      const fadeTimer = setTimeout(() => {
+        node.classList.remove('ChatMessage--recent', 'ChatMessage--fading');
+        this.framelessTimers.delete(node);
+      }, FRAMELESS_FADE_DURATION);
+      this.framelessTimers.set(node, fadeTimer);
     }, FRAMELESS_MESSAGE_LINGER);
     this.framelessTimers.set(node, timer);
   }
@@ -444,6 +457,9 @@ class ChatRenderer {
         updateMessageBadge(combinable);
         if (combinable.node) {
           this.scheduleMessageFade(combinable.node);
+        }
+        if (this.frameless) {
+          setTimeout(() => this.scrollToBottom());
         }
         continue;
       }
