@@ -15,7 +15,7 @@ body.onmap {
   --frameless-stroke-color: black;
   --frameless-shadow-color: rgba(0, 0, 0, 0.8);
   --frameless-shadow-color-soft: rgba(0, 0, 0, 0.5);
-  --frameless-backdrop: hsla(225, 10%, 10%, 0.5);
+  --frameless-backdrop: hsla(225, 10%, 10%, var(--chat-opacity));
 
   --color-base: var(--onmap-base) !important;
   --section-background: var(--onmap-base) !important;
@@ -37,9 +37,18 @@ body.onmap {
   // Frameless mode: chat is invisible when idle, individual messages fade in/out
   &.frameless {
     .Window {
-      background: transparent !important;
+      background-color: transparent !important;
+      background-image: none !important;
       border-color: transparent !important;
       box-shadow: none !important;
+      transition:
+        background-color 300ms ease,
+        border-color 300ms ease,
+        box-shadow 300ms ease;
+    }
+
+    .Section {
+      background-color: transparent !important;
     }
 
     .Panel__header,
@@ -50,10 +59,6 @@ body.onmap {
       transition: opacity 300ms ease;
     }
 
-    .Section {
-      background: transparent !important;
-    }
-
     #chat-pane {
       pointer-events: none;
       overflow: hidden !important;
@@ -61,7 +66,7 @@ body.onmap {
 
     .ChatMessage {
       opacity: 0;
-      transition: opacity 600ms ease;
+      transition: opacity 300ms ease;
       -webkit-text-stroke: 1.5px var(--frameless-stroke-color);
       paint-order: stroke fill;
       text-shadow:
@@ -80,50 +85,48 @@ body.onmap {
       transition: opacity 600ms ease;
     }
 
-    // Optional translucent backdrop — background on base so it fades with opacity,
-    // rounding on --recent so it tracks the visible run edges.
-    // Stroke/shadow disabled since the box provides contrast.
     &.chat-message-bg .ChatMessage {
-      background: var(--frameless-backdrop);
       padding: 2px 6px;
-      border-radius: 0;
       -webkit-text-stroke: unset;
       paint-order: normal;
       text-shadow: none;
-      transition:
-        opacity 600ms ease,
-        border-radius 300ms ease;
     }
 
     &.chat-message-bg .ChatMessage--recent {
-      // Round the top of the first recent in a contiguous run
+      background: var(--frameless-backdrop) !important;
+      border-radius: 0;
+      transition:
+        opacity 600ms ease,
+        border-radius 300ms ease;
+
       &:not(.ChatMessage--recent + .ChatMessage--recent) {
         border-radius: 6px 6px 0 0;
       }
 
-      // Round the bottom of the last recent in a contiguous run
       &:not(:has(+ .ChatMessage--recent)) {
         border-radius: 0 0 6px 6px;
       }
 
-      // Single recent message gets fully rounded
-      &:not(.ChatMessage--recent + .ChatMessage--recent):not(:has(+ .ChatMessage--recent)) {
+      &:not(.ChatMessage--recent + .ChatMessage--recent):not(
+          :has(+ .ChatMessage--recent)
+        ) {
         border-radius: 6px;
       }
     }
 
     &.chat-message-bg:hover .ChatMessage {
-      background: transparent;
+      background: transparent !important;
       border-radius: 0;
     }
 
     &:hover {
       .Window {
-        background: var(--color-base) !important;
+        background-color: var(--color-base) !important;
+        background-image: none !important;
         border-color: var(--onmap-window-border) !important;
         box-shadow: 0 0 4px var(--onmap-window-shadow) !important;
         transition:
-          background 200ms ease,
+          background-color 200ms ease,
           border-color 200ms ease,
           box-shadow 200ms ease;
       }

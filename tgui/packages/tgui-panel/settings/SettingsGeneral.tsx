@@ -17,7 +17,7 @@ import { resetPaneSplitters, setEditPaneSplitters } from './scaling';
 import { exportChatSettings, importChatSettings } from './settingsImExport';
 import { useSettings } from './use-settings';
 
-export function SettingsGeneral(props) {
+export function SettingsGeneral(props: { isOnMap?: boolean }) {
   const { settings, updateSettings } = useSettings();
   const [freeFont, setFreeFont] = useState(false);
 
@@ -42,7 +42,7 @@ export function SettingsGeneral(props) {
             </Button>
           ))}
         </LabeledList.Item>
-        {document.body.classList.contains('onmap') && (
+        {props.isOnMap && (
           <>
             <LabeledList.Item label="Chat position">
               {CHAT_CORNERS.map((corner) => (

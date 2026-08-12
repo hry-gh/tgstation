@@ -171,7 +171,7 @@ export function Panel(props) {
         )}
         {settingsVisible && (
           <Stack.Item>
-            <SettingsPanel />
+            <SettingsPanel isOnMap={isOnMap} />
           </Stack.Item>
         )}
         <Stack.Item grow>
