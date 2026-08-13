@@ -58,15 +58,11 @@ export function Panel(props) {
     return () => document.body.classList.remove('chat-message-bg');
   }, [messageBg]);
 
-  // Track whether chat is in a top corner for reverse message order
+  // Track whether chat is in a top corner for top-anchored message layout
   const chatTop = frameless && chatCorner.startsWith('top');
   useEffect(() => {
     document.body.classList.toggle('chat-top', chatTop);
-    chatRenderer.scrollReversed = chatTop;
-    return () => {
-      document.body.classList.remove('chat-top');
-      chatRenderer.scrollReversed = false;
-    };
+    return () => document.body.classList.remove('chat-top');
   }, [chatTop]);
 
   useEffect(() => {

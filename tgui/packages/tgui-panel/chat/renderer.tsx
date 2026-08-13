@@ -124,7 +124,6 @@ class ChatRenderer {
   currentCharacter: string | null;
   handleScroll: (type: any) => void;
   frameless: boolean;
-  scrollReversed: boolean;
   private framelessTimers: Map<HTMLElement, ReturnType<typeof setTimeout>>;
 
   constructor() {
@@ -136,7 +135,6 @@ class ChatRenderer {
     this.page = null;
     this.events = new EventEmitter();
     this.frameless = false;
-    this.scrollReversed = false;
     this.framelessTimers = new Map();
     // Scroll handler
 
@@ -155,11 +153,10 @@ class ChatRenderer {
         return;
       }
       const height = node.scrollHeight;
-      const scrollTracking = this.scrollReversed
-        ? Math.abs(node.scrollTop) < SCROLL_TRACKING_TOLERANCE ||
-          this.lastScrollHeight === 0
-        : Math.abs(height - (node.scrollTop + node.offsetHeight)) <
-            SCROLL_TRACKING_TOLERANCE || this.lastScrollHeight === 0;
+      const bottom = node.scrollTop + node.offsetHeight;
+      const scrollTracking =
+        Math.abs(height - bottom) < SCROLL_TRACKING_TOLERANCE ||
+        this.lastScrollHeight === 0;
       if (scrollTracking !== this.scrollTracking) {
         this.scrollTracking = scrollTracking;
         store.set(scrollTrackingAtom, scrollTracking);
@@ -375,14 +372,9 @@ class ChatRenderer {
   }
 
   scrollToBottom() {
-    const node = this.scrollNode!;
-    if (this.scrollReversed) {
-      node.scrollTop = 0;
-      return;
-    }
     // scrollHeight is always bigger than scrollTop and is
     // automatically clamped to the valid range.
-    node.scrollTop = node.scrollHeight;
+    this.scrollNode!.scrollTop = this.scrollNode!.scrollHeight;
   }
 
   changePage(page) {
