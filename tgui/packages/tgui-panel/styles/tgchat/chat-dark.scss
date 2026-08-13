@@ -114,12 +114,14 @@ body.onmap {
       }
     }
 
-    &.chat-message-bg:hover .ChatMessage {
+    &.chat-message-bg:hover .ChatMessage,
+    &.chat-message-bg.frameless-forced-visible .ChatMessage {
       background: transparent !important;
       border-radius: 0;
     }
 
-    &:hover {
+    &:hover,
+    &.frameless-forced-visible {
       .Window {
         background-color: var(--color-base) !important;
         background-image: none !important;

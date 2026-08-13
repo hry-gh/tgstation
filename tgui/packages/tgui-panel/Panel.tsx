@@ -58,6 +58,12 @@ export function Panel(props) {
     return () => document.body.classList.remove('chat-message-bg');
   }, [messageBg]);
 
+  useEffect(() => {
+    const show = frameless && settingsVisible;
+    document.body.classList.toggle('frameless-forced-visible', show);
+    return () => document.body.classList.remove('frameless-forced-visible');
+  }, [frameless, settingsVisible]);
+
   const onPopupDrag = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     const pixelRatio = window.devicePixelRatio ?? 1;
