@@ -80,6 +80,11 @@ body.onmap {
         0 0 20px var(--frameless-shadow-color-soft);
     }
 
+    // Top corners: hide non-recent messages entirely so content anchors to the top
+    &.chat-top .ChatMessage:not(.ChatMessage--recent):not(.ChatMessage--fading) {
+      display: none;
+    }
+
     .ChatMessage--recent {
       opacity: 1;
       transition: opacity 200ms ease;
@@ -154,6 +159,7 @@ body.onmap {
       }
 
       .ChatMessage {
+        display: block;
         opacity: 1;
         -webkit-text-stroke: unset;
         paint-order: normal;

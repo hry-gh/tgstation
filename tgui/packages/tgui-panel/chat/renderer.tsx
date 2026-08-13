@@ -377,7 +377,6 @@ class ChatRenderer {
   scrollToBottom() {
     const node = this.scrollNode!;
     if (this.scrollReversed) {
-      // Top corners: anchor to top, don't scroll
       node.scrollTop = 0;
       return;
     }
