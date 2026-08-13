@@ -375,14 +375,10 @@ class ChatRenderer {
   }
 
   scrollToBottom() {
-    if (this.scrollReversed) {
-      // column-reverse: scroll origin is at the bottom, so 0 = newest
-      this.scrollNode!.scrollTop = 0;
-      return;
-    }
-    // scrollHeight is always bigger than scrollTop and is
-    // automatically clamped to the valid range.
-    this.scrollNode!.scrollTop = this.scrollNode!.scrollHeight;
+    const node = this.scrollNode!;
+    // column-reverse flips the scroll origin: 0 = newest end
+    // normal: scrollHeight = newest end
+    node.scrollTop = this.scrollReversed ? 0 : node.scrollHeight;
   }
 
   changePage(page) {

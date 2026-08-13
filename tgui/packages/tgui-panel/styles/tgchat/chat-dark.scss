@@ -70,7 +70,7 @@ body.onmap {
       overflow: hidden !important;
     }
 
-    &.chat-top #chat-pane {
+    &.chat-top .Chat {
       display: flex;
       flex-direction: column-reverse;
     }
