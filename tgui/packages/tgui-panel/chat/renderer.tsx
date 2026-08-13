@@ -183,6 +183,13 @@ class ChatRenderer {
     // Find scrollable parent
     this.scrollNode = document.getElementById('chat-pane');
     this.scrollNode?.addEventListener('scroll', this.handleScroll);
+
+    document.body.addEventListener('mouseenter', () => {
+      if (this.frameless) {
+        this.scrollToBottom();
+      }
+    });
+
     setTimeout(() => {
       this.scrollToBottom();
     });
