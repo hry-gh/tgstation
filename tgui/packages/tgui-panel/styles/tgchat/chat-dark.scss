@@ -70,6 +70,10 @@ body.onmap {
       overflow: hidden !important;
     }
 
+    .Chat__reconnected {
+      display: none;
+    }
+
     .ChatMessage {
       opacity: 0;
       transition: opacity 300ms ease;
@@ -156,6 +160,10 @@ body.onmap {
       #chat-pane {
         pointer-events: auto;
         overflow-y: auto !important;
+      }
+
+      .Chat__reconnected {
+        display: block;
       }
 
       .ChatMessage {
