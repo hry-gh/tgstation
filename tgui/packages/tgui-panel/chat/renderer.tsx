@@ -148,7 +148,7 @@ class ChatRenderer {
       if (!node) {
         return;
       }
-      if (this.frameless && !document.body.matches(':hover')) {
+      if (this.frameless && !document.body.classList.contains('frameless-visible')) {
         this.scrollToBottom();
         return;
       }
@@ -183,13 +183,6 @@ class ChatRenderer {
     // Find scrollable parent
     this.scrollNode = document.getElementById('chat-pane');
     this.scrollNode?.addEventListener('scroll', this.handleScroll);
-
-    document.body.addEventListener('mouseenter', () => {
-      if (this.frameless) {
-        this.scrollToBottom();
-      }
-    });
-
     setTimeout(() => {
       this.scrollToBottom();
     });

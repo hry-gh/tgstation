@@ -36,40 +36,58 @@ export function Panel(props) {
   const frameless = isOnMap && settings.chatFrameless;
   useKeepAlive();
 
+  const chatTop = frameless && chatCorner.startsWith('top');
   const messageBg = frameless && settings.chatMessageBg;
 
-  // Frameless mode: per-message fade managed by the renderer
   useEffect(() => {
-    if (frameless) {
-      document.body.classList.add('frameless');
-      chatRenderer.setFrameless(true);
-    } else {
-      document.body.classList.remove('frameless');
+    const body = document.body;
+    if (!frameless) {
+      body.classList.remove(
+        'frameless',
+        'frameless-visible',
+        'chat-message-bg',
+        'chat-top',
+      );
       chatRenderer.setFrameless(false);
+      return;
     }
+
+    body.classList.add('frameless');
+    body.classList.toggle('chat-message-bg', !!messageBg);
+    body.classList.toggle('chat-top', chatTop);
+    chatRenderer.setFrameless(true);
+
+    const show = () => {
+      body.classList.add('frameless-visible');
+      chatRenderer.scrollToBottom();
+    };
+    const hide = () => {
+      if (!settingsVisible) {
+        body.classList.remove('frameless-visible');
+      }
+    };
+
+    body.addEventListener('mouseenter', show);
+    body.addEventListener('mouseleave', hide);
+
+    if (settingsVisible) {
+      body.classList.add('frameless-visible');
+    } else {
+      body.classList.remove('frameless-visible');
+    }
+
     return () => {
-      document.body.classList.remove('frameless');
+      body.removeEventListener('mouseenter', show);
+      body.removeEventListener('mouseleave', hide);
+      body.classList.remove(
+        'frameless',
+        'frameless-visible',
+        'chat-message-bg',
+        'chat-top',
+      );
       chatRenderer.setFrameless(false);
     };
-  }, [frameless]);
-
-  useEffect(() => {
-    document.body.classList.toggle('chat-message-bg', messageBg);
-    return () => document.body.classList.remove('chat-message-bg');
-  }, [messageBg]);
-
-  // Track whether chat is in a top corner for top-anchored message layout
-  const chatTop = frameless && chatCorner.startsWith('top');
-  useEffect(() => {
-    document.body.classList.toggle('chat-top', chatTop);
-    return () => document.body.classList.remove('chat-top');
-  }, [chatTop]);
-
-  useEffect(() => {
-    const show = frameless && settingsVisible;
-    document.body.classList.toggle('frameless-forced-visible', show);
-    return () => document.body.classList.remove('frameless-forced-visible');
-  }, [frameless, settingsVisible]);
+  }, [frameless, messageBg, chatTop, settingsVisible]);
 
   const onPopupDrag = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -109,7 +127,7 @@ export function Panel(props) {
           <div className="PanelDragBar" onMouseDown={onPopupDrag} />
         </>
       )}
-      <Stack fill vertical>
+      <Stack fill vertical className="Panel__stack">
         <Stack.Item>
           <Section fitted className="Panel__header">
             <Stack mr={1} align="center">

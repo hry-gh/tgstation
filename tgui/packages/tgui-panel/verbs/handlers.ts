@@ -1,3 +1,4 @@
+import { chatRenderer } from '../chat/renderer';
 import { store } from '../events/store';
 import {
   adminTargetsAtom,
@@ -42,6 +43,13 @@ export function handleTypepaths(payload: { paths: string[] }) {
 }
 
 export function handleFocusCommandBar() {
+  if (chatRenderer.frameless) {
+    const bar = document.querySelector('.CommandBar');
+    if (bar) {
+      bar.classList.add('CommandBar--focused');
+    }
+    chatRenderer.scrollToBottom();
+  }
   store.set(focusCommandBarAtom, (n) => n + 1);
 }
 

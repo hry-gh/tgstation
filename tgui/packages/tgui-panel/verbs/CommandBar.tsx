@@ -583,7 +583,14 @@ export function CommandBar() {
     : '';
 
   return (
-    <div className="CommandBar">
+    <div
+      className="CommandBar"
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          e.currentTarget.classList.remove('CommandBar--focused');
+        }
+      }}
+    >
       <div className="CommandBar__input-wrap">
         {hasSuggestions && (
           <div className="CommandBar__suggestions">
