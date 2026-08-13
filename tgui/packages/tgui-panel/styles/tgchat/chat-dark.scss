@@ -52,11 +52,17 @@ body.onmap {
     }
 
     .Panel__header,
+    .CommandBar,
     .ResizeHandle,
     .Chat__scrollButton {
       opacity: 0;
       pointer-events: none;
       transition: opacity 300ms ease;
+    }
+
+    .CommandBar:focus-within {
+      opacity: 1;
+      pointer-events: auto;
     }
 
     #chat-pane {
@@ -139,6 +145,7 @@ body.onmap {
       }
 
       .Panel__header,
+      .CommandBar,
       .ResizeHandle,
       .Chat__scrollButton {
         opacity: 1;
