@@ -60,6 +60,10 @@ body.onmap {
       transition: opacity 300ms ease;
     }
 
+    &.chat-top .Panel__header {
+      display: none;
+    }
+
     .CommandBar:focus-within {
       opacity: 1;
       pointer-events: auto;
@@ -85,7 +89,8 @@ body.onmap {
     }
 
     // Top corners: hide non-recent messages entirely so content anchors to the top
-    &.chat-top .ChatMessage:not(.ChatMessage--recent):not(.ChatMessage--fading) {
+    &.chat-top
+      .ChatMessage:not(.ChatMessage--recent):not(.ChatMessage--fading) {
       display: none;
     }
 
@@ -152,6 +157,7 @@ body.onmap {
       .CommandBar,
       .ResizeHandle,
       .Chat__scrollButton {
+        display: block !important;
         opacity: 1;
         pointer-events: auto;
         transition: opacity 200ms ease;
