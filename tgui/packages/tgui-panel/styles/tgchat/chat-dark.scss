@@ -64,6 +64,11 @@ body.onmap {
       overflow: hidden !important;
     }
 
+    &.chat-top #chat-pane {
+      display: flex;
+      flex-direction: column-reverse;
+    }
+
     .ChatMessage {
       opacity: 0;
       transition: opacity 300ms ease;
