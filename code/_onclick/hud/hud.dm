@@ -1142,6 +1142,7 @@ ADMIN_VERB(debug_chat_rect, R_DEBUG, "Debug Chat Rect", "Toggles a debug overlay
 		var/gname = key_to_group_name[key] || "u:[key]"
 		var/dx = new_offsets[1] - orig_offsets[1]
 		var/dy = new_offsets[2] - orig_offsets[2]
+		to_chat(world, span_boldannounce("DEBUG DISPLACED: [key] ([gname]) loc=[obj.screen_loc] orig=[original_loc] offset=[new_offsets[1]],[new_offsets[2]] d=[dx],[dy]"))
 		if(!group_bounds[gname])
 			group_bounds[gname] = list(
 				"min_x" = new_offsets[1],
