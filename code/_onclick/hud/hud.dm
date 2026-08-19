@@ -855,19 +855,19 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 			var/list/rect = element_rects[key]
 			element_rects[key] = list(rect[1] + delta_x, rect[2] + delta_y, rect[3], rect[4])
 			displaced_count++
-	// Cascade pass: check if any undisplaced group now overlaps a displaced element
+	// Cascade pass: check if any group overlaps another group's elements (handles both displaced-vs-displaced and undisplaced-vs-displaced)
 	for(var/pass in 1 to 5)
 		var/cascade_found = FALSE
 		for(var/list/group in groups)
-			if(displaced_elements[group[1]])
-				continue
-			// Check if any element in this group overlaps any displaced element
+			// Check if any element in this group overlaps any element NOT in this group
 			var/needs_move = FALSE
 			for(var/key in group)
 				var/list/rect = element_rects[key]
-				for(var/d_key in displaced_elements)
-					var/list/d_rect = element_rects[d_key]
-					if(rects_overlap(rect[1], rect[2], rect[3], rect[4], d_rect[1], d_rect[2], d_rect[3], d_rect[4]))
+				for(var/other_key in element_rects)
+					if(other_key in group)
+						continue
+					var/list/other_rect = element_rects[other_key]
+					if(rects_overlap(rect[1], rect[2], rect[3], rect[4], other_rect[1], other_rect[2], other_rect[3], other_rect[4]))
 						needs_move = TRUE
 						break
 				if(needs_move)
@@ -875,11 +875,11 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 			if(!needs_move)
 				continue
 			cascade_found = TRUE
-			// Find worst overlap and shift this group
-			var/worst_key = group[1]
-			var/list/worst_rect = element_rects[worst_key]
-			var/el_x = worst_rect[1]
-			var/el_y = worst_rect[2]
+			// Shift this group to clear all collisions (chat rect + other elements)
+			var/ref_key = group[1]
+			var/list/ref_rect = element_rects[ref_key]
+			var/el_x = ref_rect[1]
+			var/el_y = ref_rect[2]
 			var/el_shift_x = (el_x > chat_left + scaled_w / 2) ? 1 : -1
 			var/el_shift_y = (el_y > chat_bottom + scaled_h / 2) ? 1 : -1
 			var/dist_to_h_edge = min(abs(el_x - chat_left), abs(el_x - (chat_left + scaled_w)))
@@ -905,24 +905,38 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 					new_y += dy * ICON_SIZE_Y
 					if(new_x < ICON_SIZE_X || new_x > view_size[1] || new_y < ICON_SIZE_Y || new_y > view_size[2])
 						break
-					var/still_overlaps = rects_overlap(new_x, new_y, ICON_SIZE_X, ICON_SIZE_Y, chat_left, chat_bottom, scaled_w, scaled_h)
-					if(!still_overlaps)
+					// Check ALL group members would clear both the chat and all other elements
+					var/still_overlaps = FALSE
+					var/test_dx = new_x - el_x
+					var/test_dy = new_y - el_y
+					for(var/g_key in group)
+						var/list/g_rect = element_rects[g_key]
+						var/g_new_x = g_rect[1] + test_dx
+						var/g_new_y = g_rect[2] + test_dy
+						// Check against chat rect
+						if(rects_overlap(g_new_x, g_new_y, g_rect[3], g_rect[4], chat_left, chat_bottom, scaled_w, scaled_h))
+							still_overlaps = TRUE
+							break
+						// Check against all elements not in this group
 						for(var/other_key in element_rects)
 							if(other_key in group)
 								continue
 							var/list/other_rect = element_rects[other_key]
-							if(rects_overlap(new_x, new_y, ICON_SIZE_X, ICON_SIZE_Y, other_rect[1], other_rect[2], other_rect[3], other_rect[4]))
+							if(rects_overlap(g_new_x, g_new_y, g_rect[3], g_rect[4], other_rect[1], other_rect[2], other_rect[3], other_rect[4]))
 								still_overlaps = TRUE
 								break
+						if(still_overlaps)
+							break
 					if(!still_overlaps)
-						delta_x = new_x - el_x
-						delta_y = new_y - el_y
+						delta_x = test_dx
+						delta_y = test_dy
 						found = TRUE
 						break
 			if(found)
 				for(var/key in group)
 					var/atom/movable/screen/obj = screen_objects[key]
-					displaced_elements[key] = obj.screen_loc
+					if(!displaced_elements[key])
+						displaced_elements[key] = obj.screen_loc
 					obj.screen_loc = apply_screen_loc_delta(obj.screen_loc, delta_x, delta_y)
 					var/list/rect = element_rects[key]
 					element_rects[key] = list(rect[1] + delta_x, rect[2] + delta_y, rect[3], rect[4])
