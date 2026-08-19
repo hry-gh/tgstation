@@ -135,19 +135,13 @@
 	var/x_pixel = length(x_pack) > 1 ? text2num(x_pack[2]) : 0
 	x_pixel += dx
 	var/x_tile_delta = round(x_pixel / ICON_SIZE_X)
-	x_pixel = x_pixel % ICON_SIZE_X
-	if(x_pixel < 0)
-		x_tile_delta -= 1
-		x_pixel += ICON_SIZE_X
+	x_pixel = x_pixel - x_tile_delta * ICON_SIZE_X
 
 	// Apply dy to y pixel offset
 	var/y_pixel = length(y_pack) > 1 ? text2num(y_pack[2]) : 0
 	y_pixel += dy
 	var/y_tile_delta = round(y_pixel / ICON_SIZE_Y)
-	y_pixel = y_pixel % ICON_SIZE_Y
-	if(y_pixel < 0)
-		y_tile_delta -= 1
-		y_pixel += ICON_SIZE_Y
+	y_pixel = y_pixel - y_tile_delta * ICON_SIZE_Y
 
 	// Rebuild the tile coordinate with delta applied
 	var/x_base = x_pack[1]
