@@ -820,30 +820,56 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 				break
 			var/dx = dir[1]
 			var/dy = dir[2]
-			var/new_x = el_x
-			var/new_y = el_y
-			for(var/attempt in 1 to 30)
-				new_x += dx * ICON_SIZE_X
-				new_y += dy * ICON_SIZE_Y
-				// Bail if we've gone off-screen
-				if(new_x < ICON_SIZE_X || new_x > view_size[1] || new_y < ICON_SIZE_Y || new_y > view_size[2])
+			// Compute exact pixel shift needed to clear the chat rect in this direction
+			// using the element deepest inside the chat (closest_key)
+			var/shift = 0
+			if(dx > 0) // moving right: element left edge must clear chat right edge
+				shift = (chat_left + scaled_w) - el_x
+			else if(dx < 0) // moving left: element right edge must clear chat left edge
+				shift = el_x + ICON_SIZE_X - chat_left
+			else if(dy > 0) // moving up: element bottom edge must clear chat top edge
+				shift = (chat_bottom + scaled_h) - el_y
+			else if(dy < 0) // moving down: element top edge must clear chat bottom edge
+				shift = el_y + ICON_SIZE_Y - chat_bottom
+			shift = ceil(shift)
+			if(shift <= 0)
+				continue
+			var/test_dx = dx * shift
+			var/test_dy = dy * shift
+			// Verify ALL group members clear the chat at this exact shift
+			var/still_overlaps = FALSE
+			for(var/g_key in group)
+				var/list/g_rect = element_rects[g_key]
+				var/g_new_x = g_rect[1] + test_dx
+				var/g_new_y = g_rect[2] + test_dy
+				if(rects_overlap(g_new_x, g_new_y, g_rect[3], g_rect[4], chat_left, chat_bottom, scaled_w, scaled_h))
+					still_overlaps = TRUE
 					break
-				// Check if ALL group members would clear the chat with this delta
-				var/test_dx = new_x - el_x
-				var/test_dy = new_y - el_y
-				var/still_overlaps = FALSE
+			// If some group members still overlap, find the max shift needed across all members
+			if(still_overlaps)
+				var/max_shift = shift
 				for(var/g_key in group)
 					var/list/g_rect = element_rects[g_key]
-					var/g_new_x = g_rect[1] + test_dx
-					var/g_new_y = g_rect[2] + test_dy
-					if(rects_overlap(g_new_x, g_new_y, g_rect[3], g_rect[4], chat_left, chat_bottom, scaled_w, scaled_h))
-						still_overlaps = TRUE
-						break
-				if(!still_overlaps)
-					delta_x = new_x - el_x
-					delta_y = new_y - el_y
-					found = TRUE
-					break
+					var/member_shift = 0
+					if(dx > 0)
+						member_shift = (chat_left + scaled_w) - g_rect[1]
+					else if(dx < 0)
+						member_shift = g_rect[1] + g_rect[3] - chat_left
+					else if(dy > 0)
+						member_shift = (chat_bottom + scaled_h) - g_rect[2]
+					else if(dy < 0)
+						member_shift = g_rect[2] + g_rect[4] - chat_bottom
+					max_shift = max(max_shift, member_shift)
+				test_dx = dx * ceil(max_shift)
+				test_dy = dy * ceil(max_shift)
+			// Check the shifted position is on-screen
+			var/ref_new_x = el_x + test_dx
+			var/ref_new_y = el_y + test_dy
+			if(ref_new_x < ICON_SIZE_X || ref_new_x > view_size[1] || ref_new_y < ICON_SIZE_Y || ref_new_y > view_size[2])
+				continue
+			delta_x = test_dx
+			delta_y = test_dy
+			found = TRUE
 		if(!found)
 			continue
 		// Apply the same delta to every element in the group
@@ -898,40 +924,70 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 					break
 				var/dx = dir[1]
 				var/dy = dir[2]
-				var/new_x = el_x
-				var/new_y = el_y
-				for(var/attempt in 1 to 30)
-					new_x += dx * ICON_SIZE_X
-					new_y += dy * ICON_SIZE_Y
-					if(new_x < ICON_SIZE_X || new_x > view_size[1] || new_y < ICON_SIZE_Y || new_y > view_size[2])
+				// Compute max pixel shift needed across all group members to clear all obstacles
+				var/max_shift = 0
+				for(var/g_key in group)
+					var/list/g_rect = element_rects[g_key]
+					// Check against chat rect
+					if(rects_overlap(g_rect[1], g_rect[2], g_rect[3], g_rect[4], chat_left, chat_bottom, scaled_w, scaled_h))
+						var/needed = 0
+						if(dx > 0)
+							needed = (chat_left + scaled_w) - g_rect[1]
+						else if(dx < 0)
+							needed = g_rect[1] + g_rect[3] - chat_left
+						else if(dy > 0)
+							needed = (chat_bottom + scaled_h) - g_rect[2]
+						else if(dy < 0)
+							needed = g_rect[2] + g_rect[4] - chat_bottom
+						max_shift = max(max_shift, needed)
+					// Check against all elements not in this group
+					for(var/other_key in element_rects)
+						if(other_key in group)
+							continue
+						var/list/other_rect = element_rects[other_key]
+						if(rects_overlap(g_rect[1], g_rect[2], g_rect[3], g_rect[4], other_rect[1], other_rect[2], other_rect[3], other_rect[4]))
+							var/needed = 0
+							if(dx > 0)
+								needed = (other_rect[1] + other_rect[3]) - g_rect[1]
+							else if(dx < 0)
+								needed = g_rect[1] + g_rect[3] - other_rect[1]
+							else if(dy > 0)
+								needed = (other_rect[2] + other_rect[4]) - g_rect[2]
+							else if(dy < 0)
+								needed = g_rect[2] + g_rect[4] - other_rect[2]
+							max_shift = max(max_shift, needed)
+				if(max_shift <= 0)
+					continue
+				max_shift = ceil(max_shift)
+				var/test_dx = dx * max_shift
+				var/test_dy = dy * max_shift
+				// Verify the shifted position is on-screen and fully clear
+				var/ref_new_x = el_x + test_dx
+				var/ref_new_y = el_y + test_dy
+				if(ref_new_x < ICON_SIZE_X || ref_new_x > view_size[1] || ref_new_y < ICON_SIZE_Y || ref_new_y > view_size[2])
+					continue
+				// Final verification: make sure no group member still collides
+				var/still_collides = FALSE
+				for(var/g_key in group)
+					var/list/g_rect = element_rects[g_key]
+					var/g_new_x = g_rect[1] + test_dx
+					var/g_new_y = g_rect[2] + test_dy
+					if(rects_overlap(g_new_x, g_new_y, g_rect[3], g_rect[4], chat_left, chat_bottom, scaled_w, scaled_h))
+						still_collides = TRUE
 						break
-					// Check ALL group members would clear both the chat and all other elements
-					var/still_overlaps = FALSE
-					var/test_dx = new_x - el_x
-					var/test_dy = new_y - el_y
-					for(var/g_key in group)
-						var/list/g_rect = element_rects[g_key]
-						var/g_new_x = g_rect[1] + test_dx
-						var/g_new_y = g_rect[2] + test_dy
-						// Check against chat rect
-						if(rects_overlap(g_new_x, g_new_y, g_rect[3], g_rect[4], chat_left, chat_bottom, scaled_w, scaled_h))
-							still_overlaps = TRUE
+					for(var/other_key in element_rects)
+						if(other_key in group)
+							continue
+						var/list/other_rect = element_rects[other_key]
+						if(rects_overlap(g_new_x, g_new_y, g_rect[3], g_rect[4], other_rect[1], other_rect[2], other_rect[3], other_rect[4]))
+							still_collides = TRUE
 							break
-						// Check against all elements not in this group
-						for(var/other_key in element_rects)
-							if(other_key in group)
-								continue
-							var/list/other_rect = element_rects[other_key]
-							if(rects_overlap(g_new_x, g_new_y, g_rect[3], g_rect[4], other_rect[1], other_rect[2], other_rect[3], other_rect[4]))
-								still_overlaps = TRUE
-								break
-						if(still_overlaps)
-							break
-					if(!still_overlaps)
-						delta_x = test_dx
-						delta_y = test_dy
-						found = TRUE
+					if(still_collides)
 						break
+				if(!still_collides)
+					delta_x = test_dx
+					delta_y = test_dy
+					found = TRUE
 			if(found)
 				for(var/key in group)
 					var/atom/movable/screen/obj = screen_objects[key]
@@ -1099,13 +1155,10 @@ ADMIN_VERB(debug_chat_rect, R_DEBUG, "Debug Chat Rect", "Toggles a debug overlay
 	if(rect_w <= 0 || rect_h <= 0)
 		return
 
-	// Position: convert bottom-left to screen_loc tile:pixel
-	var/left_tile = round(clamped_left / ICON_SIZE_X) + 1
-	var/left_px = round(clamped_left) % ICON_SIZE_X
-	var/bottom_tile = round(clamped_bottom / ICON_SIZE_Y) + 1
-	var/bottom_px = round(clamped_bottom) % ICON_SIZE_Y
+	var/bottom_left_loc = offset_to_screen_loc(round(clamped_left), round(clamped_bottom))
+	var/top_left_loc = offset_to_screen_loc(round(clamped_left), round(clamped_top))
 
-	to_chat(world, span_boldannounce("DEBUG CHAT RECT: screen_loc [left_tile]:[left_px],[bottom_tile]:[bottom_px] size [rect_w]x[rect_h]"))
+	to_chat(world, span_boldannounce("DEBUG CHAT RECT: screen_loc [bottom_left_loc] size [rect_w]x[rect_h]"))
 
 	// Create a single icon scaled to the exact rect size
 	var/icon/debug_rect = icon('icons/blanks/32x32.dmi', "nothing")
@@ -1114,7 +1167,7 @@ ADMIN_VERB(debug_chat_rect, R_DEBUG, "Debug Chat Rect", "Toggles a debug overlay
 
 	var/atom/movable/screen/fill = new
 	fill.icon = debug_rect
-	fill.screen_loc = "[left_tile]:[left_px],[bottom_tile]:[bottom_px]"
+	fill.screen_loc = bottom_left_loc
 	fill.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	fill.color = "#ff0000"
 	fill.alpha = 50
@@ -1123,7 +1176,7 @@ ADMIN_VERB(debug_chat_rect, R_DEBUG, "Debug Chat Rect", "Toggles a debug overlay
 	// Info label at top-left of the rect
 	var/atom/movable/screen/label = new
 	label.icon = null
-	label.screen_loc = "[left_tile]:[left_px],[bottom_tile + round(rect_h / ICON_SIZE_Y)]:[bottom_px]"
+	label.screen_loc = top_left_loc
 	label.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	label.maptext_width = 256
 	label.maptext_height = 48
@@ -1184,31 +1237,27 @@ ADMIN_VERB(debug_chat_rect, R_DEBUG, "Debug Chat Rect", "Toggles a debug overlay
 		var/gcolor = group_colors[((color_idx - 1) % length(group_colors)) + 1]
 		var/box_x = bounds["min_x"]
 		var/box_y = bounds["min_y"]
-		var/box_w = bounds["max_x"] - bounds["min_x"]
-		var/box_h = bounds["max_y"] - bounds["min_y"]
+		var/box_w = round(bounds["max_x"] - bounds["min_x"])
+		var/box_h = round(bounds["max_y"] - bounds["min_y"])
 		if(box_w <= 0 || box_h <= 0)
 			continue
-		// Box outline
+		// Box fill
 		var/icon/group_icon = icon('icons/blanks/32x32.dmi', "nothing")
 		group_icon.Scale(box_w, box_h)
 		group_icon.DrawBox("#FFFFFF", 1, 1, box_w, box_h)
-		var/box_tile_x = round(box_x / ICON_SIZE_X) + 1
-		var/box_px_x = round(box_x) % ICON_SIZE_X
-		var/box_tile_y = round(box_y / ICON_SIZE_Y) + 1
-		var/box_px_y = round(box_y) % ICON_SIZE_Y
+		var/box_loc = offset_to_screen_loc(round(box_x), round(box_y))
 		var/atom/movable/screen/group_box = new
 		group_box.icon = group_icon
-		group_box.screen_loc = "[box_tile_x]:[box_px_x],[box_tile_y]:[box_px_y]"
+		group_box.screen_loc = box_loc
 		group_box.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 		group_box.color = gcolor
 		group_box.alpha = 60
 		chat_debug_objects += group_box
 		// Label at top-left of group box
-		var/top_tile_y = round(bounds["max_y"] / ICON_SIZE_Y) + 1
-		var/top_px_y = round(bounds["max_y"]) % ICON_SIZE_Y
+		var/label_loc = offset_to_screen_loc(round(box_x), round(bounds["max_y"]))
 		var/atom/movable/screen/group_label = new
 		group_label.icon = null
-		group_label.screen_loc = "[box_tile_x]:[box_px_x],[top_tile_y]:[top_px_y]"
+		group_label.screen_loc = label_loc
 		group_label.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 		group_label.maptext_width = 200
 		group_label.maptext_height = 24
