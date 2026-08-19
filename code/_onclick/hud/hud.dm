@@ -724,9 +724,8 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 	// BYOND screen_loc Y is bottom-up but winset pos Y is top-down
 	var/chat_bottom = view_size[2] - (scaled_y + scaled_h)
 	var/chat_left = scaled_x
-	// screen_loc_to_offset maps tile 1 to offset ICON_SIZE (not 0), so shift chat coords
-	// into the same offset space by adding one tile on each axis
-	chat_left += ICON_SIZE_X
+	// screen_loc_to_offset maps Y tile 1 to offset ICON_SIZE_Y (not 0), so shift chat Y
+	// into the same offset space by adding one tile
 	chat_bottom += ICON_SIZE_Y
 	chat_rect_viewport = list(chat_left, chat_bottom, scaled_w, scaled_h)
 	// Determine shift direction based on which half of the screen the chat center is in
