@@ -1155,8 +1155,17 @@ ADMIN_VERB(debug_chat_rect, R_DEBUG, "Debug Chat Rect", "Toggles a debug overlay
 	if(rect_w <= 0 || rect_h <= 0)
 		return
 
-	var/bottom_left_loc = offset_to_screen_loc(round(clamped_left), round(clamped_bottom))
-	var/top_left_loc = offset_to_screen_loc(round(clamped_left), round(clamped_top))
+	// Chat rect is in viewport pixel space — use manual tile:pixel with +1 for 1-indexing
+	var/left_tile = round(clamped_left / ICON_SIZE_X) + 1
+	var/left_px = round(clamped_left) % ICON_SIZE_X
+	var/bottom_tile = round(clamped_bottom / ICON_SIZE_Y) + 1
+	var/bottom_px = round(clamped_bottom) % ICON_SIZE_Y
+	var/bottom_left_loc = "[left_tile]:[left_px],[bottom_tile]:[bottom_px]"
+
+	var/top_rounded = round(clamped_top)
+	var/top_tile = round(top_rounded / ICON_SIZE_Y) + 1
+	var/top_px = top_rounded % ICON_SIZE_Y
+	var/top_left_loc = "[left_tile]:[left_px],[top_tile]:[top_px]"
 
 	to_chat(world, span_boldannounce("DEBUG CHAT RECT: screen_loc [bottom_left_loc] size [rect_w]x[rect_h]"))
 
