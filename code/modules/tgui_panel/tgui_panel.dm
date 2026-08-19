@@ -206,13 +206,41 @@
 		var/datum/hud/hud = client.mob?.hud_used
 		if(!hud)
 			return TRUE
-		// Winget the map view-size and cache it BEFORE calling displacement (which must not yield)
+		// Get map element size and view-size to compute letterbox offset
 		var/map_view_size_raw = winget(client, "mapwindow.map", "view-size")
-		var/list/map_parts = splittext("[map_view_size_raw]", "x")
-		if(length(map_parts) >= 2)
-			hud.cached_map_view_size = list(text2num(map_parts[1]), text2num(map_parts[2]))
+		var/map_elem_size_raw = winget(client, "mapwindow.map", "size")
+		var/list/view_parts = splittext("[map_view_size_raw]", "x")
+		var/list/elem_parts = splittext("[map_elem_size_raw]", "x")
+		if(length(view_parts) < 2 || length(elem_parts) < 2)
+			return TRUE
+		var/view_w = text2num(view_parts[1])
+		var/view_h = text2num(view_parts[2])
+		var/elem_w = text2num(elem_parts[1])
+		var/elem_h = text2num(elem_parts[2])
+		hud.cached_map_view_size = list(view_w, view_h)
+		// Letterbox offset: the map rendering is centered within the element
+		var/offset_x = (elem_w - view_w) / 2
+		var/offset_y = (elem_h - view_h) / 2
+		// Debug logging
+		var/browser_pos_raw = winget(client, "browseroutput", "pos")
+		var/browser_size_raw = winget(client, "browseroutput", "size")
+		to_chat(world, span_boldannounce("DEBUG PANEL/BOUNDS: map.size=[map_elem_size_raw] map.view-size=[map_view_size_raw] letterbox=[offset_x],[offset_y]"))
+		to_chat(world, span_boldannounce("DEBUG PANEL/BOUNDS: browser.pos=[browser_pos_raw] browser.size=[browser_size_raw] tgui_chat=[x],[y],[w],[h]"))
 		if(!isnull(x) && !isnull(y) && !isnull(w) && !isnull(h))
-			hud.displace_hud_for_chat(list(x, y, w, h))
+			// Adjust chat coords from mapwindow space to map rendering space
+			var/adj_x = x - offset_x
+			var/adj_y = y - offset_y
+			// Clamp to the visible map rendering area
+			var/adj_right = min(adj_x + w, view_w)
+			var/adj_bottom = min(adj_y + h, view_h)
+			adj_x = max(adj_x, 0)
+			adj_y = max(adj_y, 0)
+			var/adj_w = adj_right - adj_x
+			var/adj_h = adj_bottom - adj_y
+			if(adj_w > 0 && adj_h > 0)
+				hud.displace_hud_for_chat(list(adj_x, adj_y, adj_w, adj_h))
+			else
+				hud.displace_hud_for_chat(null)
 		else
 			hud.displace_hud_for_chat(null)
 		return TRUE

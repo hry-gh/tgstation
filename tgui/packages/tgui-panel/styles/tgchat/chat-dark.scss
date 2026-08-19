@@ -191,6 +191,7 @@ body.onmap {
       }
 
       .CommandBar {
+        display: flex;
         opacity: 1;
         pointer-events: auto;
         border-radius: 0;

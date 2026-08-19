@@ -78,6 +78,10 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 	var/list/cached_map_view_size
 	/// Assoc list of hud_key -> original screen_loc for displaced elements
 	var/list/displaced_elements = list()
+	/// Whether the chat rect debug overlay is currently shown
+	var/chat_debug_shown = FALSE
+	/// List of screen objects used for the debug overlay
+	var/list/atom/movable/screen/chat_debug_objects
 	/// Assoc list of all screen objects we hold by their key
 	var/list/atom/movable/screen/screen_objects = list()
 	/// List of screen objects by their screen group
@@ -146,6 +150,8 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 	QDEL_NULL(palette_actions)
 	QDEL_NULL(listed_actions)
 	QDEL_LIST(floating_actions)
+	QDEL_LIST(chat_debug_objects)
+	chat_debug_objects = null
 	screentip_text = null
 	screen_groups = null
 	inventory_slots.Cut()
@@ -711,12 +717,6 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 	// BYOND screen_loc Y is bottom-up but winset pos Y is top-down
 	var/chat_bottom = view_size[2] - (scaled_y + scaled_h)
 	var/chat_left = scaled_x
-	// Add half-tile padding to account for zoom scaling imprecision
-	var/hpad = ICON_SIZE_X / 2
-	chat_left -= hpad
-	chat_bottom -= hpad
-	scaled_w += hpad * 2
-	scaled_h += hpad * 2
 	chat_rect_viewport = list(chat_left, chat_bottom, scaled_w, scaled_h)
 	// Determine shift direction based on which half of the screen the chat center is in
 	var/chat_center_x = chat_left + chat_w / 2
@@ -946,6 +946,9 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 		listed_actions.check_against_view()
 	if(palette_actions)
 		palette_actions.check_against_view()
+	// Refresh the debug overlay if active
+	if(chat_debug_shown)
+		update_chat_debug()
 
 /// Restores all HUD elements to their original positions
 /datum/hud/proc/restore_hud_displacement()
@@ -960,6 +963,9 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 		listed_actions.check_against_view()
 	if(palette_actions)
 		palette_actions.check_against_view()
+	// Clear debug overlay since there's no chat rect anymore
+	if(chat_debug_shown)
+		update_chat_debug()
 
 /// Displaces a single screen element if it overlaps the chat rect. Used for late-added elements.
 /datum/hud/proc/displace_single_element(hud_key, atom/movable/screen/obj)
@@ -1012,6 +1018,14 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 		var/delta_y = new_y - offsets[2]
 		obj.screen_loc = apply_screen_loc_delta(obj.screen_loc, delta_x, delta_y)
 
+ADMIN_VERB(debug_chat_rect, R_DEBUG, "Debug Chat Rect", "Toggles a debug overlay showing the chat browser rect as screen_loc tiles.", ADMIN_CATEGORY_DEBUG)
+	var/datum/hud/hud = user.mob?.hud_used
+	if(!hud)
+		to_chat(user, span_warning("No HUD found."))
+		return
+	hud.toggle_chat_debug()
+	to_chat(user, span_notice("Chat rect debug overlay [hud.chat_debug_shown ? "enabled" : "disabled"]."))
+
 /// Checks if two rectangles overlap
 /proc/rects_overlap(x1, y1, w1, h1, x2, y2, w2, h2)
 	return !(x1 + w1 <= x2 || x2 + w2 <= x1 || y1 + h1 <= y2 || y2 + h2 <= y1)
@@ -1025,6 +1039,195 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 		if(rects_overlap(x, y, w, h, other[1], other[2], other[3], other[4]))
 			return TRUE
 	return FALSE
+
+/// Toggles the debug overlay that visualizes the chat rect as converted to screen_loc coordinates
+/datum/hud/proc/toggle_chat_debug()
+	chat_debug_shown = !chat_debug_shown
+	if(chat_debug_shown)
+		update_chat_debug()
+	else
+		clear_chat_debug()
+
+/// Clears the chat rect debug overlay
+/datum/hud/proc/clear_chat_debug()
+	var/client/client = mymob?.canon_client
+	if(client && length(chat_debug_objects))
+		client.screen -= chat_debug_objects
+	QDEL_LIST(chat_debug_objects)
+	chat_debug_objects = null
+
+/// Updates the chat rect debug overlay to reflect the current chat_rect_viewport
+/datum/hud/proc/update_chat_debug()
+	clear_chat_debug()
+	if(!chat_debug_shown)
+		to_chat(world, span_boldannounce("DEBUG CHAT RECT: update called but debug not shown"))
+		return
+	if(!chat_rect_viewport || !length(chat_rect_viewport))
+		to_chat(world, span_boldannounce("DEBUG CHAT RECT: no chat_rect_viewport! chat_rect=[chat_rect ? json_encode(chat_rect) : "null"] cached_map_view_size=[cached_map_view_size ? json_encode(cached_map_view_size) : "null"]"))
+		return
+	var/our_view = mymob?.canon_client?.view
+	if(!our_view)
+		to_chat(world, span_boldannounce("DEBUG CHAT RECT: no view"))
+		return
+	var/client/client = mymob.canon_client
+	if(!client)
+		to_chat(world, span_boldannounce("DEBUG CHAT RECT: no client"))
+		return
+
+	var/cv_left = chat_rect_viewport[1]
+	var/cv_bottom = chat_rect_viewport[2]
+	var/cv_w = chat_rect_viewport[3]
+	var/cv_h = chat_rect_viewport[4]
+
+	to_chat(world, span_boldannounce("DEBUG CHAT RECT: viewport rect = left:[cv_left] bottom:[cv_bottom] w:[cv_w] h:[cv_h]"))
+	to_chat(world, span_boldannounce("DEBUG CHAT RECT: raw chat_rect = [json_encode(chat_rect)]"))
+	to_chat(world, span_boldannounce("DEBUG CHAT RECT: cached_map_view_size = [json_encode(cached_map_view_size)]"))
+	to_chat(world, span_boldannounce("DEBUG CHAT RECT: view = [our_view]"))
+
+	chat_debug_objects = list()
+
+	// Clamp to viewport pixel bounds
+	var/list/view_size = view_to_pixels(our_view)
+	var/clamped_left = max(cv_left, 0)
+	var/clamped_bottom = max(cv_bottom, 0)
+	var/clamped_right = min(cv_left + cv_w, view_size[1])
+	var/clamped_top = min(cv_bottom + cv_h, view_size[2])
+	var/rect_w = round(clamped_right - clamped_left)
+	var/rect_h = round(clamped_top - clamped_bottom)
+	if(rect_w <= 0 || rect_h <= 0)
+		return
+
+	// Position: convert bottom-left to screen_loc tile:pixel
+	var/left_tile = round(clamped_left / ICON_SIZE_X) + 1
+	var/left_px = round(clamped_left) % ICON_SIZE_X
+	var/bottom_tile = round(clamped_bottom / ICON_SIZE_Y) + 1
+	var/bottom_px = round(clamped_bottom) % ICON_SIZE_Y
+
+	to_chat(world, span_boldannounce("DEBUG CHAT RECT: screen_loc [left_tile]:[left_px],[bottom_tile]:[bottom_px] size [rect_w]x[rect_h]"))
+
+	// Create a single icon scaled to the exact rect size
+	var/icon/debug_rect = icon('icons/blanks/32x32.dmi', "nothing")
+	debug_rect.Scale(rect_w, rect_h)
+	debug_rect.DrawBox("#FFFFFF", 1, 1, rect_w, rect_h)
+
+	var/atom/movable/screen/fill = new
+	fill.icon = debug_rect
+	fill.screen_loc = "[left_tile]:[left_px],[bottom_tile]:[bottom_px]"
+	fill.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+	fill.color = "#ff0000"
+	fill.alpha = 50
+	chat_debug_objects += fill
+
+	// Info label at top-left of the rect
+	var/atom/movable/screen/label = new
+	label.icon = null
+	label.screen_loc = "[left_tile]:[left_px],[bottom_tile + round(rect_h / ICON_SIZE_Y)]:[bottom_px]"
+	label.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+	label.maptext_width = 256
+	label.maptext_height = 48
+	label.maptext = {"<span style='font-size:6pt;font-family:monospace;background:rgba(0,0,0,0.7);padding:1px 3px'>
+		<span style='color:#ff4444'>chat_vp: [round(cv_left)]x[round(cv_bottom)] [round(cv_w)]x[round(cv_h)]</span><br>
+		<span style='color:#44ff44'>chat_raw: [chat_rect[1]]x[chat_rect[2]] [chat_rect[3]]x[chat_rect[4]]</span>
+		</span>"}
+	chat_debug_objects += label
+
+	// Build group name lookup and collect per-group bounding boxes from displaced elements
+	var/list/key_to_group_name = list()
+	var/list/key_groups = HUD_DISPLACEMENT_KEY_GROUPS
+	var/list/group_names = list(
+		"RIGHT_STATUS", "BOTTOM_RIGHT", "CLOTHING", "ITEM_BAR",
+		"ALIEN_STATUS", "ALIEN_BAR", "BLOB_STATUS", "BLOB_BAR",
+		"CYBORG_BAR", "PAI_LEFT", "PAI_CENTER", "SILICON_RIGHT",
+		"AI_MAIN", "AI_FLOOR", "GUARDIAN_BAR", "CHANGELING", "VOIDWALKER")
+	for(var/group_idx in 1 to length(key_groups))
+		var/list/group = key_groups[group_idx]
+		var/gname = (group_idx <= length(group_names)) ? group_names[group_idx] : "GROUP_[group_idx]"
+		for(var/key in group)
+			key_to_group_name[key] = gname
+	var/list/type_groups = HUD_DISPLACEMENT_TYPE_GROUPS
+	for(var/group_type in type_groups)
+		for(var/key in screen_objects)
+			var/atom/movable/screen/sobj = screen_objects[key]
+			if(istype(sobj, group_type) && !key_to_group_name[key])
+				key_to_group_name[key] = "[group_type]"
+
+	// Collect displaced elements into groups with bounding boxes
+	// group_name -> list("min_x", "min_y", "max_x", "max_y", "dx", "dy", "count", "members")
+	var/list/group_bounds = list()
+	for(var/key in displaced_elements)
+		var/original_loc = displaced_elements[key]
+		var/atom/movable/screen/obj = screen_objects[key]
+		if(!obj)
+			continue
+		var/list/new_offsets = screen_loc_to_offset(obj.screen_loc, our_view)
+		var/list/orig_offsets = screen_loc_to_offset(original_loc, our_view)
+		if(!new_offsets || !orig_offsets)
+			continue
+		var/gname = key_to_group_name[key] || "u:[key]"
+		var/dx = new_offsets[1] - orig_offsets[1]
+		var/dy = new_offsets[2] - orig_offsets[2]
+		if(!group_bounds[gname])
+			group_bounds[gname] = list(
+				"min_x" = new_offsets[1],
+				"min_y" = new_offsets[2],
+				"max_x" = new_offsets[1] + ICON_SIZE_X,
+				"max_y" = new_offsets[2] + ICON_SIZE_Y,
+				"dx" = dx,
+				"dy" = dy,
+				"count" = 1,
+			)
+		else
+			var/list/bounds = group_bounds[gname]
+			bounds["min_x"] = min(bounds["min_x"], new_offsets[1])
+			bounds["min_y"] = min(bounds["min_y"], new_offsets[2])
+			bounds["max_x"] = max(bounds["max_x"], new_offsets[1] + ICON_SIZE_X)
+			bounds["max_y"] = max(bounds["max_y"], new_offsets[2] + ICON_SIZE_Y)
+			bounds["count"] += 1
+
+	// Draw a box and label per group
+	var/static/list/group_colors = list("#4488ff", "#44ff88", "#ff8844", "#ff44ff", "#ffff44", "#44ffff", "#ff4444", "#88ff44")
+	var/color_idx = 0
+	for(var/gname in group_bounds)
+		color_idx++
+		var/list/bounds = group_bounds[gname]
+		var/gcolor = group_colors[((color_idx - 1) % length(group_colors)) + 1]
+		var/box_x = bounds["min_x"]
+		var/box_y = bounds["min_y"]
+		var/box_w = bounds["max_x"] - bounds["min_x"]
+		var/box_h = bounds["max_y"] - bounds["min_y"]
+		if(box_w <= 0 || box_h <= 0)
+			continue
+		// Box outline
+		var/icon/group_icon = icon('icons/blanks/32x32.dmi', "nothing")
+		group_icon.Scale(box_w, box_h)
+		group_icon.DrawBox("#FFFFFF", 1, 1, box_w, box_h)
+		var/box_tile_x = round(box_x / ICON_SIZE_X) + 1
+		var/box_px_x = round(box_x) % ICON_SIZE_X
+		var/box_tile_y = round(box_y / ICON_SIZE_Y) + 1
+		var/box_px_y = round(box_y) % ICON_SIZE_Y
+		var/atom/movable/screen/group_box = new
+		group_box.icon = group_icon
+		group_box.screen_loc = "[box_tile_x]:[box_px_x],[box_tile_y]:[box_px_y]"
+		group_box.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+		group_box.color = gcolor
+		group_box.alpha = 60
+		chat_debug_objects += group_box
+		// Label at top-left of group box
+		var/top_tile_y = round(bounds["max_y"] / ICON_SIZE_Y) + 1
+		var/top_px_y = round(bounds["max_y"]) % ICON_SIZE_Y
+		var/atom/movable/screen/group_label = new
+		group_label.icon = null
+		group_label.screen_loc = "[box_tile_x]:[box_px_x],[top_tile_y]:[top_px_y]"
+		group_label.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+		group_label.maptext_width = 200
+		group_label.maptext_height = 24
+		group_label.maptext = {"<span style='font-size:5pt;font-family:monospace;background:rgba(0,0,0,0.85);color:[gcolor];padding:1px 2px;white-space:nowrap'>
+			[gname] ([bounds["count"]]) d:[bounds["dx"]],[bounds["dy"]]
+			</span>"}
+		chat_debug_objects += group_label
+
+	client.screen += chat_debug_objects
+	to_chat(world, span_boldannounce("DEBUG CHAT RECT: done, [length(chat_debug_objects)] objects on screen, [length(displaced_elements)] displaced in [length(group_bounds)] groups"))
 
 /// Generates and fills new action groups with our mob's current actions
 /datum/hud/proc/build_action_groups()
