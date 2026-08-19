@@ -724,10 +724,6 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 	// BYOND screen_loc Y is bottom-up but winset pos Y is top-down
 	var/chat_bottom = view_size[2] - (scaled_y + scaled_h)
 	var/chat_left = scaled_x
-	// screen_loc_to_offset maps tile 1 to offset ICON_SIZE (not 0), so shift chat coords
-	// into the same offset space by adding one tile on each axis
-	chat_left += ICON_SIZE_X
-	chat_bottom += ICON_SIZE_Y
 	chat_rect_viewport = list(chat_left, chat_bottom, scaled_w, scaled_h)
 	// Determine shift direction based on which half of the screen the chat center is in
 	var/chat_center_x = chat_left + chat_w / 2
@@ -1246,10 +1242,12 @@ ADMIN_VERB(debug_chat_rect, R_DEBUG, "Debug Chat Rect", "Toggles a debug overlay
 		if(box_w <= 0 || box_h <= 0)
 			continue
 		// Box fill
+		// screen_loc_to_offset returns values with a 1-tile bias (tile 1 = offset 32, not 0)
+		// but offset_to_screen_loc renders tile 1 at viewport pixel 0, so subtract the bias
 		var/icon/group_icon = icon('icons/blanks/32x32.dmi', "nothing")
 		group_icon.Scale(box_w, box_h)
 		group_icon.DrawBox("#FFFFFF", 1, 1, box_w, box_h)
-		var/box_loc = offset_to_screen_loc(round(box_x), round(box_y))
+		var/box_loc = offset_to_screen_loc(round(box_x) - ICON_SIZE_X, round(box_y) - ICON_SIZE_Y)
 		var/atom/movable/screen/group_box = new
 		group_box.icon = group_icon
 		group_box.screen_loc = box_loc
@@ -1258,7 +1256,7 @@ ADMIN_VERB(debug_chat_rect, R_DEBUG, "Debug Chat Rect", "Toggles a debug overlay
 		group_box.alpha = 60
 		chat_debug_objects += group_box
 		// Label at top-left of group box
-		var/label_loc = offset_to_screen_loc(round(box_x), round(bounds["max_y"]))
+		var/label_loc = offset_to_screen_loc(round(box_x) - ICON_SIZE_X, round(bounds["max_y"]) - ICON_SIZE_Y)
 		var/atom/movable/screen/group_label = new
 		group_label.icon = null
 		group_label.screen_loc = label_loc
