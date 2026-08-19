@@ -208,6 +208,13 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 /datum/hud/proc/initialize_screen_objects()
 	return
 
+/// Returns a list of displacement groups for this HUD type.
+/// Each group is a list of HUD keys that should move together when displaced by the chat.
+/// Elements not in any group are treated as individual groups.
+/// Override in subtypes to define groupings for that HUD
+/datum/hud/proc/get_displacement_groups()
+	return list()
+
 /datum/hud/proc/client_refresh(datum/source)
 	SIGNAL_HANDLER
 	var/client/client = mymob.canon_client
@@ -741,13 +748,11 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 		if(!offsets)
 			continue
 		element_rects[key] = list(offsets[1], offsets[2], ICON_SIZE_X, ICON_SIZE_Y)
-	// Use explicitly defined displacement groups, plus individual elements not in any group
-	var/list/key_groups = HUD_DISPLACEMENT_KEY_GROUPS
-	var/list/type_groups = HUD_DISPLACEMENT_TYPE_GROUPS
+	// Build displacement groups from the HUD subtype's override, plus ungrouped elements
+	var/list/defined_groups = get_displacement_groups()
 	var/list/in_a_group = list()
-	// Build groups from explicit key lists
 	var/list/groups = list()
-	for(var/list/group in key_groups)
+	for(var/list/group in defined_groups)
 		var/list/valid_group = list()
 		for(var/key in group)
 			if(element_rects[key])
@@ -755,23 +760,6 @@ GLOBAL_LIST_INIT(available_ui_styles, list(
 				in_a_group[key] = TRUE
 		if(length(valid_group))
 			groups += list(valid_group)
-	// Build groups from type matching
-	for(var/group_type in type_groups)
-		var/list/type_group = list()
-		for(var/key in element_rects)
-			if(in_a_group[key])
-				continue
-			var/atom/movable/screen/obj = screen_objects[key]
-			if(istype(obj, group_type))
-				type_group += key
-				in_a_group[key] = TRUE
-		var/list/extras = type_groups[group_type]
-		for(var/extra_key in extras)
-			if(element_rects[extra_key] && !in_a_group[extra_key])
-				type_group += extra_key
-				in_a_group[extra_key] = TRUE
-		if(length(type_group))
-			groups += list(type_group)
 	// Add ungrouped elements as individual groups
 	for(var/key in element_rects)
 		if(!in_a_group[key])
@@ -1131,25 +1119,13 @@ ADMIN_VERB(debug_chat_rect, R_DEBUG, "Debug Chat Rect", "Toggles a debug overlay
 		</span>"}
 	chat_debug_objects += label
 
-	// Build group name lookup and collect per-group bounding boxes from displaced elements
+	// Build group name lookup from get_displacement_groups()
 	var/list/key_to_group_name = list()
-	var/list/key_groups = HUD_DISPLACEMENT_KEY_GROUPS
-	var/list/group_names = list(
-		"RIGHT_STATUS", "BOTTOM_RIGHT", "CLOTHING", "ITEM_BAR",
-		"ALIEN_STATUS", "ALIEN_BAR", "BLOB_STATUS", "BLOB_BAR",
-		"CYBORG_BAR", "PAI_LEFT", "PAI_CENTER", "SILICON_RIGHT",
-		"AI_MAIN", "AI_FLOOR", "GUARDIAN_BAR", "CHANGELING", "VOIDWALKER")
-	for(var/group_idx in 1 to length(key_groups))
-		var/list/group = key_groups[group_idx]
-		var/gname = (group_idx <= length(group_names)) ? group_names[group_idx] : "GROUP_[group_idx]"
+	var/list/debug_groups = get_displacement_groups()
+	for(var/group_idx in 1 to length(debug_groups))
+		var/list/group = debug_groups[group_idx]
 		for(var/key in group)
-			key_to_group_name[key] = gname
-	var/list/type_groups = HUD_DISPLACEMENT_TYPE_GROUPS
-	for(var/group_type in type_groups)
-		for(var/key in screen_objects)
-			var/atom/movable/screen/sobj = screen_objects[key]
-			if(istype(sobj, group_type) && !key_to_group_name[key])
-				key_to_group_name[key] = "[group_type]"
+			key_to_group_name[key] = "group_[group_idx]"
 
 	// Collect displaced elements into groups with bounding boxes
 	// group_name -> list("min_x", "min_y", "max_x", "max_y", "dx", "dy", "count", "members")
