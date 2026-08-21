@@ -1256,7 +1256,7 @@ ADMIN_VERB(debug_chat_rect, R_DEBUG, "Debug Chat Rect", "Toggles a debug overlay
 		var/icon/group_icon = icon('icons/blanks/32x32.dmi', "nothing")
 		group_icon.Scale(box_w, box_h)
 		group_icon.DrawBox("#FFFFFF", 1, 1, box_w, box_h)
-		var/box_loc = offset_to_screen_loc(round(box_x) + ICON_SIZE_X, round(box_y))
+		var/box_loc = offset_to_screen_loc(round(box_x), round(box_y))
 		var/atom/movable/screen/group_box = new
 		group_box.icon = group_icon
 		group_box.screen_loc = box_loc
@@ -1265,7 +1265,7 @@ ADMIN_VERB(debug_chat_rect, R_DEBUG, "Debug Chat Rect", "Toggles a debug overlay
 		group_box.alpha = 60
 		chat_debug_objects += group_box
 		// Label at top-left of group box
-		var/label_loc = offset_to_screen_loc(round(box_x) + ICON_SIZE_X, round(bounds["max_y"]))
+		var/label_loc = offset_to_screen_loc(round(box_x), round(bounds["max_y"]))
 		var/atom/movable/screen/group_label = new
 		group_label.icon = null
 		group_label.screen_loc = label_loc
